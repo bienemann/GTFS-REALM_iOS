@@ -14,8 +14,13 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        SPTransAPI.shared.authenticate()
-        
+        SPTransAPI.shared.authenticate { (result) in
+            if result == true {
+                print("authenticated")
+            }else{
+                print("not authenticated")
+            }
+        }
     }
 
     override func didReceiveMemoryWarning() {
