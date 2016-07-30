@@ -23,7 +23,7 @@ class SPTransAPI : NSObject {
     }
     
     func buscarLinha(searchTerm : String, response:(response : Response<AnyObject, NSError>) -> Void) {
-        let requestURL = "/Linha/Buscar?termosBusca=\(searchTerm)"
+        let requestURL = "\(baseURL)/Linha/Buscar?termosBusca=\(searchTerm)"
         Alamofire.request(.GET, requestURL).responseJSON { (responseObject) in
             response(response: responseObject)
         }

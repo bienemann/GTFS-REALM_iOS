@@ -34,11 +34,29 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         self.navigationItem.title = "Home"
         self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.blackColor()]
+        
+        if segue.identifier == "open_test"{
+            
+//            let cell = sender as! UITableViewCell
+//            
+//            switch tableViewEntries[(self.tableView.indexPathForCell(cell)?.row)!] {
+//            case "buscar linha":
+//                
+//                let viewController = segue.destinationViewController as! TesteLinhaViewController
+//                viewController.title = "teste buscar linha"
+//                break
+//                
+//            default:
+//                break
+//            }
+        
+        }
     }
 
 
     //UITableView Methods
     
+
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.tableViewEntries.count
     }
@@ -55,7 +73,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return cell
         
     }
-    
+
     
 }
 
