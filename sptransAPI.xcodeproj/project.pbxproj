@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */; };
 		1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D27F17C1D4F96EA00F896FA /* LineModel.swift */; };
+		1D7C20891D4FDFFC003CC408 /* GTFSAgency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */; };
+		1D7C208B1D4FE238003CC408 /* GTFSRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208A1D4FE238003CC408 /* GTFSRoute.swift */; };
 		1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */; };
 		1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */; };
 		1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C101D4BD8A300ADF874 /* ViewController.swift */; };
@@ -42,6 +44,8 @@
 		01FB86777463B07E4697A270 /* Pods_sptransAPI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sptransAPI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TesteLinhaViewController.swift; sourceTree = "<group>"; };
 		1D27F17C1D4F96EA00F896FA /* LineModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineModel.swift; sourceTree = "<group>"; };
+		1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSAgency.swift; sourceTree = "<group>"; };
+		1D7C208A1D4FE238003CC408 /* GTFSRoute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSRoute.swift; sourceTree = "<group>"; };
 		1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPTransAPI.swift; sourceTree = "<group>"; };
 		1DC24C0B1D4BD8A300ADF874 /* sptransAPI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sptransAPI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -105,9 +109,19 @@
 		1D27F17B1D4F96A200F896FA /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				1D27F1BE1D4FDE6D00F896FA /* GTFS Model */,
 				1D27F17C1D4F96EA00F896FA /* LineModel.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		1D27F1BE1D4FDE6D00F896FA /* GTFS Model */ = {
+			isa = PBXGroup;
+			children = (
+				1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */,
+				1D7C208A1D4FE238003CC408 /* GTFSRoute.swift */,
+			);
+			path = "GTFS Model";
 			sourceTree = "<group>";
 		};
 		1D7D94EA1D4BF3F400CEBB4A /* Helpers */ = {
@@ -372,8 +386,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D7C20891D4FDFFC003CC408 /* GTFSAgency.swift in Sources */,
 				1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */,
 				0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */,
+				1D7C208B1D4FE238003CC408 /* GTFSRoute.swift in Sources */,
 				1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
 				1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */,
