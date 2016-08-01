@@ -40,6 +40,11 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
         return cell
     }
     
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        let line = self.searchDataSource[indexPath.row]
+        SPTransAPI.shared.loadDetails(line.lineUniqueID)
+    }
+    
     //SearchBar Delegte
     
     func searchBarSearchButtonClicked(searchBar: UISearchBar) {

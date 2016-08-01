@@ -19,5 +19,53 @@
             landmarkType = "5">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "sptransAPI/Helpers/SPTransAPI.swift"
+            timestampString = "491765911.986289"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "28"
+            endingLineNumber = "28"
+            landmarkName = "loadDetails(_:)"
+            landmarkType = "5">
+            <Locations>
+               <Location
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "sptransAPI.SPTransAPI.loadDetails (Swift.Int) -&gt; ()"
+                  moduleName = "sptransAPI"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/resource/Projects/sptransAPI/sptransAPI/Helpers/SPTransAPI.swift"
+                  timestampString = "491765912.1677"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "28"
+                  endingLineNumber = "28"
+                  offsetFromSymbolStart = "363">
+               </Location>
+               <Location
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "sptransAPI.SPTransAPI.(loadDetails (Swift.Int) -&gt; ()).(closure #1)"
+                  moduleName = "sptransAPI"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/resource/Projects/sptransAPI/sptransAPI/Helpers/SPTransAPI.swift"
+                  timestampString = "491765912.167918"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "29"
+                  endingLineNumber = "29"
+                  offsetFromSymbolStart = "145">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>

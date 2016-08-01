@@ -9,6 +9,16 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>CoreStore.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>GCDKit.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>ObjectMapper.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -27,7 +37,7 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>043B9B574D46DB25DD4CA414BB43DBC6</key>
+		<key>218E06F2D141511A718874A749C77C34</key>
 		<dict>
 			<key>primary</key>
 			<true/>
@@ -37,12 +47,22 @@
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>D5D6200D4BE741574DBD4FB768A6F55B</key>
+		<key>AA4FE6A1303F8E31CC770B5B73DA7D11</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>DFCECFF63F1406B5579C8323BBBB8F98</key>
+		<key>CAC15AE88B0190E7871056183E0A9808</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>CC9EC41493E2DECEFE1BD2264890942D</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>D5D6200D4BE741574DBD4FB768A6F55B</key>
 		<dict>
 			<key>primary</key>
 			<true/>

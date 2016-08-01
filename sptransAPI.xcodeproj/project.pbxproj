@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */; };
 		1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D27F17C1D4F96EA00F896FA /* LineModel.swift */; };
+		1D27F1BD1D4FD4BB00F896FA /* GTFS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 1D27F1BB1D4FD4BB00F896FA /* GTFS.xcdatamodeld */; };
 		1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */; };
 		1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */; };
 		1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C101D4BD8A300ADF874 /* ViewController.swift */; };
@@ -42,6 +43,7 @@
 		01FB86777463B07E4697A270 /* Pods_sptransAPI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sptransAPI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TesteLinhaViewController.swift; sourceTree = "<group>"; };
 		1D27F17C1D4F96EA00F896FA /* LineModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineModel.swift; sourceTree = "<group>"; };
+		1D27F1BC1D4FD4BB00F896FA /* GTFS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = GTFS.xcdatamodel; sourceTree = "<group>"; };
 		1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPTransAPI.swift; sourceTree = "<group>"; };
 		1DC24C0B1D4BD8A300ADF874 /* sptransAPI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sptransAPI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -155,6 +157,7 @@
 				1D7D94EA1D4BF3F400CEBB4A /* Helpers */,
 				1D7D94EB1D4BF40300CEBB4A /* Models */,
 				1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */,
+				1D27F1BB1D4FD4BB00F896FA /* GTFS.xcdatamodeld */,
 				1DC24C101D4BD8A300ADF874 /* ViewController.swift */,
 				1DC24C121D4BD8A300ADF874 /* Main.storyboard */,
 				1DC24C151D4BD8A300ADF874 /* Assets.xcassets */,
@@ -377,6 +380,7 @@
 				1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
 				1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */,
+				1D27F1BD1D4FD4BB00F896FA /* GTFS.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -624,6 +628,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		1D27F1BB1D4FD4BB00F896FA /* GTFS.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				1D27F1BC1D4FD4BB00F896FA /* GTFS.xcdatamodel */,
+			);
+			currentVersion = 1D27F1BC1D4FD4BB00F896FA /* GTFS.xcdatamodel */;
+			path = GTFS.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 1DC24C031D4BD8A300ADF874 /* Project object */;
 }

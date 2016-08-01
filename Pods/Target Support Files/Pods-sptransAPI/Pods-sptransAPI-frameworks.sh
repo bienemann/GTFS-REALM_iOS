@@ -85,11 +85,15 @@ strip_invalid_archs() {
 
 if [[ "$CONFIGURATION" == "Debug" ]]; then
   install_framework "Pods-sptransAPI/Alamofire.framework"
+  install_framework "Pods-sptransAPI/CoreStore.framework"
+  install_framework "Pods-sptransAPI/GCDKit.framework"
   install_framework "Pods-sptransAPI/ObjectMapper.framework"
   install_framework "Pods-sptransAPI/SVProgressHUD.framework"
 fi
 if [[ "$CONFIGURATION" == "Release" ]]; then
   install_framework "Pods-sptransAPI/Alamofire.framework"
+  install_framework "Pods-sptransAPI/CoreStore.framework"
+  install_framework "Pods-sptransAPI/GCDKit.framework"
   install_framework "Pods-sptransAPI/ObjectMapper.framework"
   install_framework "Pods-sptransAPI/SVProgressHUD.framework"
 fi

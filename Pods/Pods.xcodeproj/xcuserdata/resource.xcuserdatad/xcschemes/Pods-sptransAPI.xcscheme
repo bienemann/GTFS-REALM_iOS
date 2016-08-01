@@ -14,7 +14,7 @@
             buildForArchiving = "YES">
             <BuildableReference
                BuildableIdentifier = 'primary'
-               BlueprintIdentifier = 'BAFA94C05A6FB9572FC0E8AB'
+               BlueprintIdentifier = '6C483DDFB1C35622C38B54DC'
                BlueprintName = 'Pods-sptransAPI'
                ReferencedContainer = 'container:Pods.xcodeproj'
                BuildableName = 'Pods_sptransAPI.framework'>
