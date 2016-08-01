@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		030A327B1D4C499100FB5B5B /* BaseTestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030A327A1D4C499100FB5B5B /* BaseTestViewController.swift */; };
 		0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */; };
 		1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D27F17C1D4F96EA00F896FA /* LineModel.swift */; };
 		1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */; };
@@ -41,7 +40,6 @@
 /* Begin PBXFileReference section */
 		00A0E66E1DFAE1B958D9EB20 /* Pods-sptransAPI.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sptransAPI.debug.xcconfig"; path = "Pods/Target Support Files/Pods-sptransAPI/Pods-sptransAPI.debug.xcconfig"; sourceTree = "<group>"; };
 		01FB86777463B07E4697A270 /* Pods_sptransAPI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sptransAPI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		030A327A1D4C499100FB5B5B /* BaseTestViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseTestViewController.swift; sourceTree = "<group>"; };
 		0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TesteLinhaViewController.swift; sourceTree = "<group>"; };
 		1D27F17C1D4F96EA00F896FA /* LineModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineModel.swift; sourceTree = "<group>"; };
 		1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPTransAPI.swift; sourceTree = "<group>"; };
@@ -91,7 +89,6 @@
 			isa = PBXGroup;
 			children = (
 				0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */,
-				030A327A1D4C499100FB5B5B /* BaseTestViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -376,7 +373,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */,
-				030A327B1D4C499100FB5B5B /* BaseTestViewController.swift in Sources */,
 				0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */,
 				1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,

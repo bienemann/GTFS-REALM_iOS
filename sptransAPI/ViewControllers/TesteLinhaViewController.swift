@@ -8,19 +8,55 @@
 
 import Foundation
 import UIKit
-import ObjectMapper
+import SVProgressHUD
+import Dispatch
 
-class TesteLinhaViewController: UIViewController {
+class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
+    
+    @IBOutlet weak var tableView : UITableView?
+    @IBOutlet weak var searchBar : UISearchBar?
+    
+    var searchDataSource : Array<LineModel> = Array()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+    }
     
-        SPTransAPI.shared.buscarLinha("5119") { (result) in
+    //Table View Delegate
+    
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.searchDataSource.count
+    }
+    
+    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+        return 44
+    }
+    
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("line_cell", forIndexPath: indexPath)
+        let line = self.searchDataSource[indexPath.row]
+        cell.textLabel?.text = line.currentName()
+        cell.detailTextLabel?.text = "\(line.lineIDNumber)-\(line.lineIDType)"
+        return cell
+    }
+    
+    //SearchBar Delegte
+    
+    func searchBarSearchButtonClicked(searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+        SVProgressHUD.showWithStatus("buscando linhas")
+        
+        SPTransAPI.shared.buscarLinha(searchBar.text!) { (result) in
             if result != nil{
-                for line in result! {
-                    print(line.currentName())
-                }
+                self.searchDataSource.removeAll()
+                self.searchDataSource.appendContentsOf(result!)
             }
+            
+            dispatch_async(dispatch_get_main_queue(), {
+                self.tableView?.reloadData()
+                SVProgressHUD.dismiss()
+            })
+            
         }
     }
 }
