@@ -11,7 +11,7 @@ import RealmSwift
 
 class GTFSRoute: Object {
     
-    dynamic var route_id : Int = 0
+    dynamic var route_id : String = ""
     dynamic var agency_id : GTFSAgency?
     dynamic var route_short_name : String = ""
     dynamic var route_long_name : String = ""

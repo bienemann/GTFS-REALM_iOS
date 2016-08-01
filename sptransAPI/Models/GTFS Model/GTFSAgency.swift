@@ -11,7 +11,7 @@ import RealmSwift
 
 class GTFSAgency: Object {
     
-    dynamic var agency_id : Int = 0
+    dynamic var agency_id : String = ""
     dynamic var agency_name : String = ""
     dynamic var agency_url : String = ""
     dynamic var agency_timezone : String = ""
