@@ -8,6 +8,7 @@
 
 import Foundation
 import Alamofire
+import ObjectMapper
 
 class SPTransAPI : NSObject {
     
@@ -22,11 +23,34 @@ class SPTransAPI : NSObject {
         }
     }
     
-    func buscarLinha(searchTerm : String, response:(response : Response<AnyObject, NSError>) -> Void) {
+    func buscarLinha(searchTerm: String, completion: (result : Array<LineModel>?) -> Void){
         let requestURL = "\(baseURL)/Linha/Buscar?termosBusca=\(searchTerm)"
-        Alamofire.request(.GET, requestURL).responseJSON { (responseObject) in
-            response(response: responseObject)
+        Alamofire.request(.GET, requestURL).responseJSON { (response) in
+            switch response.result.isSuccess{
+            case true:
+                
+                guard let JSON = response.result.value as! NSArray? else {
+                    completion(result: nil)
+                    return
+                }
+                
+                var lines : Array<LineModel> = Array()
+                for lineDict in JSON {
+                    guard let line = Mapper<LineModel>().map(lineDict) else {
+                        continue
+                    }
+                    lines.append(line)
+                }
+                completion(result: lines)
+                
+                break
+            case false:
+                completion(result: nil)
+                break
+            }
         }
+        
+        
     }
     
 }

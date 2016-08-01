@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		030A327B1D4C499100FB5B5B /* BaseTestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030A327A1D4C499100FB5B5B /* BaseTestViewController.swift */; };
 		0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */; };
+		1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D27F17C1D4F96EA00F896FA /* LineModel.swift */; };
 		1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */; };
 		1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */; };
 		1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C101D4BD8A300ADF874 /* ViewController.swift */; };
@@ -42,6 +43,7 @@
 		01FB86777463B07E4697A270 /* Pods_sptransAPI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sptransAPI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		030A327A1D4C499100FB5B5B /* BaseTestViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseTestViewController.swift; sourceTree = "<group>"; };
 		0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TesteLinhaViewController.swift; sourceTree = "<group>"; };
+		1D27F17C1D4F96EA00F896FA /* LineModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineModel.swift; sourceTree = "<group>"; };
 		1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPTransAPI.swift; sourceTree = "<group>"; };
 		1DC24C0B1D4BD8A300ADF874 /* sptransAPI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sptransAPI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -103,6 +105,14 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
+		1D27F17B1D4F96A200F896FA /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1D27F17C1D4F96EA00F896FA /* LineModel.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		1D7D94EA1D4BF3F400CEBB4A /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -143,6 +153,7 @@
 		1DC24C0D1D4BD8A300ADF874 /* sptransAPI */ = {
 			isa = PBXGroup;
 			children = (
+				1D27F17B1D4F96A200F896FA /* Models */,
 				0310709C1D4C42CD0020F417 /* ViewControllers */,
 				1D7D94EA1D4BF3F400CEBB4A /* Helpers */,
 				1D7D94EB1D4BF40300CEBB4A /* Models */,
@@ -369,6 +380,7 @@
 				0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */,
 				1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
+				1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

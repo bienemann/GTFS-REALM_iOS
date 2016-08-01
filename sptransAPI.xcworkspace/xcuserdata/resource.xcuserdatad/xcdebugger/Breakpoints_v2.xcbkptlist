@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "sptransAPI/Helpers/SPTransAPI.swift"
-            timestampString = "491521025.22978"
+            timestampString = "491761008.085149"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "21"
-            endingLineNumber = "21"
+            startingLineNumber = "22"
+            endingLineNumber = "22"
             landmarkName = "authenticate(_:)"
             landmarkType = "5">
          </BreakpointContent>
