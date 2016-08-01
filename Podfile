@@ -7,7 +7,7 @@ use_frameworks!
 
 target 'sptransAPI' do
 	pod 'Alamofire', '~> 3.4'
-	pod 'Mantle'
+	pod 'ObjectMapper', '~> 1.3'
 end
 
 target 'sptransAPITests' do

@@ -85,9 +85,9 @@ strip_invalid_archs() {
 
 if [[ "$CONFIGURATION" == "Debug" ]]; then
   install_framework "Pods-sptransAPI/Alamofire.framework"
-  install_framework "Pods-sptransAPI/Mantle.framework"
+  install_framework "Pods-sptransAPI/ObjectMapper.framework"
 fi
 if [[ "$CONFIGURATION" == "Release" ]]; then
   install_framework "Pods-sptransAPI/Alamofire.framework"
-  install_framework "Pods-sptransAPI/Mantle.framework"
+  install_framework "Pods-sptransAPI/ObjectMapper.framework"
 fi
