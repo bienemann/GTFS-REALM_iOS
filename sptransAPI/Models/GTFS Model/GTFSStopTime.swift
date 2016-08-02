@@ -16,7 +16,7 @@ class GTFSStopTime: Object {
     dynamic var departure_time : String = ""
     dynamic var stop_id : Int = -1
     dynamic var stop_sequence : Int = -1
-    let stop_headsign : String? = nil
+    dynamic var stop_headsign : String? = nil
     let pickup_type = RealmOptional<Int>()
     let drop_off_type = RealmOptional<Int>()
     let shape_dist_traveled = RealmOptional<Double>()

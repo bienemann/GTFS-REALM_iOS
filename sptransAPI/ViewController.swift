@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import RealmSwift
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
@@ -18,7 +19,20 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        GTFSParser.sharedInstance.parseFromURL("http://127.0.0.1:8080/routes.txt")
+        let realm = try! Realm()
+        let agencyResult = realm.objects(GTFSAgency.self).filter("agency_name = 'SPTRANS'")
+        if agencyResult.count > 0 {
+            let agency = agencyResult.first!
+            if agency.agency_name == "SPTRANS" {
+                print("SPTRANS ja existe no banco")
+            }else{
+                print("ha algo no banco mas não é sptrans")
+            }
+        }else{
+            print("SPTRANS não existe no banco, criando agora.")
+            GTFSParser.sharedInstance.parseAgency("http://127.0.0.1:8080/agency.txt")
+        }
+        
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {

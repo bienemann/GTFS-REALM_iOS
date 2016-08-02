@@ -12,15 +12,18 @@ import RealmSwift
 class GTFSRoute: Object {
     
     dynamic var route_id : String = ""
-    dynamic var agency_id : GTFSAgency?
+    dynamic var agency_id : String? = nil
     dynamic var route_short_name : String = ""
     dynamic var route_long_name : String = ""
-    let route_desc : String? = nil
+    dynamic var route_desc : String? = nil
     dynamic var route_type : Int = 999
-    let route_url : String? = nil
-    let route_color : String? = nil
-    let route_text_color : String? = nil
+    dynamic var route_url : String? = nil
+    dynamic var route_color : String? = nil
+    dynamic var route_text_color : String? = nil
     
+    override static func primaryKey() -> String? {
+        return "route_id"
+    }
     
 // Specify properties to ignore (Realm won't persist these)
     

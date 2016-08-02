@@ -14,13 +14,17 @@ class GTFSTrip: Object {
     dynamic var route_id : String = ""
     dynamic var service_id : String = ""
     dynamic var trip_id : String = ""
-    let trip_headsign : String? = nil
-    let trip_short_name : String? = nil
+    dynamic var trip_headsign : String? = nil
+    dynamic var trip_short_name : String? = nil
     let direction_id = RealmOptional<Int>()
-    let block_id : String? = nil
+    dynamic var block_id : String? = nil
     let shape_id = RealmOptional<Int>()
     let wheelchair_accessible = RealmOptional<Int>()
     let bikes_allowed = RealmOptional<Int>()
+    
+    override static func primaryKey() -> String? {
+        return "trip_id"
+    }
     
 // Specify properties to ignore (Realm won't persist these)
     

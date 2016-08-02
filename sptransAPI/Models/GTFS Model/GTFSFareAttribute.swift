@@ -18,6 +18,10 @@ class GTFSFareAttribute: Object {
     dynamic var transfers : String = ""
     var transfer_duration = RealmOptional<Int>()
     
+    override static func primaryKey() -> String? {
+        return "fare_id"
+    }
+    
 // Specify properties to ignore (Realm won't persist these)
     
 //  override static func ignoredProperties() -> [String] {

@@ -8,18 +8,19 @@
 
 import Foundation
 import Alamofire
+import RealmSwift
 
 class GTFSParser {
     
     static let sharedInstance = GTFSParser()
     
-    func parseFromURL(urlString : String){
+    func parseFromURL(urlString : String, completion: (Array<Dictionary<String, AnyObject>>) -> Void){
         Alamofire.request(.GET, urlString).responseData { (response) in
             self.GTFSFileToArray(response.data!, completion: { (dataArray) in
                 if dataArray != nil{
-                    for dict in dataArray! {
-                        print(dict)
-                    }
+                    completion(dataArray!)
+                }else{
+                    //to-do: tratar erro
                 }
             })
         }
@@ -70,8 +71,17 @@ class GTFSParser {
         }
     }
     
-    func parseAgency(data: NSDictionary){
-        
+    func parseAgency(url: String){
+        self.parseFromURL(url) { (resultsArray) in
+            let realm = try! Realm()
+            for object in resultsArray{
+                let agency = GTFSAgency(value: object)
+                try! realm.write {
+                    realm.add(agency)
+                }
+                
+            }
+        }
     }
     
 }
