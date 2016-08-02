@@ -25,6 +25,10 @@
 		1DEAD3BF1D510B93006560F3 /* GTFSFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3BE1D510B93006560F3 /* GTFSFrequency.swift */; };
 		1DEAD3C11D510CAE006560F3 /* GTFSCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3C01D510CAE006560F3 /* GTFSCalendar.swift */; };
 		1DEAD3C31D510D63006560F3 /* GTFSCalendarDates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3C21D510D63006560F3 /* GTFSCalendarDates.swift */; };
+		1DEAD3C51D510E2A006560F3 /* GTFSShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3C41D510E2A006560F3 /* GTFSShape.swift */; };
+		1DEAD3C71D510F54006560F3 /* GTFSStopTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3C61D510F54006560F3 /* GTFSStopTime.swift */; };
+		1DEAD3C91D5110AE006560F3 /* GTFSStop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3C81D5110AE006560F3 /* GTFSStop.swift */; };
+		1DEAD3CB1D5111D4006560F3 /* GTFSTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3CA1D5111D4006560F3 /* GTFSTransfer.swift */; };
 		2DAAC2C1D784167103EE65C8 /* Pods_sptransAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01FB86777463B07E4697A270 /* Pods_sptransAPI.framework */; };
 /* End PBXBuildFile section */
 
@@ -72,6 +76,10 @@
 		1DEAD3BE1D510B93006560F3 /* GTFSFrequency.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSFrequency.swift; sourceTree = "<group>"; };
 		1DEAD3C01D510CAE006560F3 /* GTFSCalendar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSCalendar.swift; sourceTree = "<group>"; };
 		1DEAD3C21D510D63006560F3 /* GTFSCalendarDates.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSCalendarDates.swift; sourceTree = "<group>"; };
+		1DEAD3C41D510E2A006560F3 /* GTFSShape.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSShape.swift; sourceTree = "<group>"; };
+		1DEAD3C61D510F54006560F3 /* GTFSStopTime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSStopTime.swift; sourceTree = "<group>"; };
+		1DEAD3C81D5110AE006560F3 /* GTFSStop.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSStop.swift; sourceTree = "<group>"; };
+		1DEAD3CA1D5111D4006560F3 /* GTFSTransfer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSTransfer.swift; sourceTree = "<group>"; };
 		E9F3E035419FEBB92CFB681B /* Pods-sptransAPI.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sptransAPI.release.xcconfig"; path = "Pods/Target Support Files/Pods-sptransAPI/Pods-sptransAPI.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -138,6 +146,10 @@
 				1DEAD3BE1D510B93006560F3 /* GTFSFrequency.swift */,
 				1DEAD3C01D510CAE006560F3 /* GTFSCalendar.swift */,
 				1DEAD3C21D510D63006560F3 /* GTFSCalendarDates.swift */,
+				1DEAD3C41D510E2A006560F3 /* GTFSShape.swift */,
+				1DEAD3C61D510F54006560F3 /* GTFSStopTime.swift */,
+				1DEAD3C81D5110AE006560F3 /* GTFSStop.swift */,
+				1DEAD3CA1D5111D4006560F3 /* GTFSTransfer.swift */,
 			);
 			path = "GTFS Model";
 			sourceTree = "<group>";
@@ -407,10 +419,14 @@
 				1D7C20891D4FDFFC003CC408 /* GTFSAgency.swift in Sources */,
 				1DEAD3BF1D510B93006560F3 /* GTFSFrequency.swift in Sources */,
 				1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */,
+				1DEAD3C91D5110AE006560F3 /* GTFSStop.swift in Sources */,
 				0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */,
+				1DEAD3C71D510F54006560F3 /* GTFSStopTime.swift in Sources */,
 				1D7C208B1D4FE238003CC408 /* GTFSRoute.swift in Sources */,
 				1DEAD3C31D510D63006560F3 /* GTFSCalendarDates.swift in Sources */,
+				1DEAD3CB1D5111D4006560F3 /* GTFSTransfer.swift in Sources */,
 				1DEAD3BD1D5109EC006560F3 /* GTFSTrip.swift in Sources */,
+				1DEAD3C51D510E2A006560F3 /* GTFSShape.swift in Sources */,
 				1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */,
 				1D7C208F1D4FEAE4003CC408 /* GTFSFareAttribute.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
