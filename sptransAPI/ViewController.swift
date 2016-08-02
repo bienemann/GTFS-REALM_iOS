@@ -18,7 +18,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        
+        GTFSParser.sharedInstance.parseFromURL("http://127.0.0.1:8080/routes.txt")
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {
