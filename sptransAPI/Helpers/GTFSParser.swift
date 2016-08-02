@@ -14,7 +14,7 @@ class GTFSParser {
     
     static let sharedInstance = GTFSParser()
     
-    func parseFromURL(urlString : String, completion: (Array<Dictionary<String, AnyObject>>) -> Void){
+    func parseFromURL(urlString : String, completion: Array<Dictionary<String, AnyObject>> -> Void){
         Alamofire.request(.GET, urlString).responseData { (response) in
             self.GTFSFileToArray(response.data!, completion: { (dataArray) in
                 if dataArray != nil{
@@ -71,17 +71,20 @@ class GTFSParser {
         }
     }
     
-    func parseAgency(url: String){
+    func parse<T:Object>(url: String, className: T.Type){
         self.parseFromURL(url) { (resultsArray) in
             let realm = try! Realm()
             for object in resultsArray{
-                let agency = GTFSAgency(value: object)
-                try! realm.write {
-                    realm.add(agency)
+                let newEntry = className.init()
+                for (key, value) in object{
+                    newEntry.setValue(value, forKey: key)
                 }
-                
+                try! realm.write {
+                    realm.add(newEntry)
+                }
             }
         }
     }
+    
     
 }

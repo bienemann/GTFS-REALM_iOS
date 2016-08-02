@@ -19,20 +19,16 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        let realm = try! Realm()
-        let agencyResult = realm.objects(GTFSAgency.self).filter("agency_name = 'SPTRANS'")
-        if agencyResult.count > 0 {
-            let agency = agencyResult.first!
-            if agency.agency_name == "SPTRANS" {
-                print("SPTRANS ja existe no banco")
-            }else{
-                print("ha algo no banco mas não é sptrans")
-            }
-        }else{
-            print("SPTRANS não existe no banco, criando agora.")
-            GTFSParser.sharedInstance.parseAgency("http://127.0.0.1:8080/agency.txt")
-        }
-        
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/agency.txt", className: GTFSAgency.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/calendar.txt", className: GTFSCalendar.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_attributes.txt", className: GTFSFareAttribute.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_rules.txt", className: GTFSFareRule.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/frequencies.txt", className: GTFSFrequency.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/routes.txt", className: GTFSRoute.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/shapes.txt", className: GTFSShape.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stop_times.txt", className: GTFSStopTime.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stops.txt", className: GTFSStop.self)
+        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/trips.txt", className: GTFSTrip.self)
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {
@@ -49,20 +45,20 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         self.navigationItem.title = "Home"
         self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.blackColor()]
         
+        let realm = try! Realm()
+        let agencyResult = realm.objects(GTFSAgency.self).filter("agency_name = 'SPTRANS'")
+        if agencyResult.count > 0 {
+            let agency = agencyResult.first!
+            if agency.agency_name == "SPTRANS" {
+                print("SPTRANS ja existe no banco")
+            }else{
+                print("ha algo no banco mas não é sptrans")
+            }
+        }else{
+            print("ooops something is wrong")
+        }
+        
         if segue.identifier == "open_test"{
-            
-//            let cell = sender as! UITableViewCell
-//            
-//            switch tableViewEntries[(self.tableView.indexPathForCell(cell)?.row)!] {
-//            case "buscar linha":
-//                
-//                let viewController = segue.destinationViewController as! TesteLinhaViewController
-//                viewController.title = "teste buscar linha"
-//                break
-//                
-//            default:
-//                break
-//            }
         
         }
     }
