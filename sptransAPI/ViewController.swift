@@ -20,26 +20,52 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         // Do any additional setup after loading the view, typically from a nib.
         
         GTFSManager.sharedInstance.downloadGTFS { (finished) in
-            print("fifnished downloading bundle")
-            for (_, value) in GTFSManager.sharedInstance.fileNames {
+            print("Finished downloading bundle files")
+            for (key, value) in GTFSManager.sharedInstance.fileNames {
                 GTFSParser.sharedInstance.parseCSV(value!, completion: { (result) in
-                    print(result)
+                    switch key{
+                    case "agency":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSAgency.self)
+                        break
+                    case "calendar":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendar.self)
+                        break
+                    case "fare_attributes":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareAttribute.self)
+                        break
+                    case "fare_rules":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareRule.self)
+                        break
+                    case "frequencies":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSFrequency.self)
+                        break
+                    case "routes":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSRoute.self)
+                        break
+                    case "shapes":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSShape.self)
+                        break
+                    case "stop_times":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSStopTime.self)
+                        break
+                    case "stops":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSStop.self)
+                        break
+                    case "trips":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSTrip.self)
+                        break
+                    case "transfers":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSTransfer.self)
+                        break
+                    case "calendar_dates":
+                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendarDates.self)
+                        break
+                    default:
+                        break
+                    }
                 })
             }
         }
-        
-        
-        
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/agency.txt", className: GTFSAgency.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/calendar.txt", className: GTFSCalendar.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_attributes.txt", className: GTFSFareAttribute.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_rules.txt", className: GTFSFareRule.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/frequencies.txt", className: GTFSFrequency.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/routes.txt", className: GTFSRoute.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/shapes.txt", className: GTFSShape.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stop_times.txt", className: GTFSStopTime.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stops.txt", className: GTFSStop.self)
-//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/trips.txt", className: GTFSTrip.self)
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {

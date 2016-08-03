@@ -27,35 +27,42 @@ class GTFSParser {
         }
     }
     
-    func parseCSV(filePath : String, completion: (Array<Dictionary<String, AnyObject>>?) -> Void){
-        
-        
+    func parseCSV(filePath : String, completion: (Array<Dictionary<String, String>>?) -> Void){
         
         let importer = CSVImporter<[String: String]>(path: filePath)
-        importer.startImportingRecords(structure: { (headerValues) -> Void in
+        importer.startImportingRecords(structure: { (headerValues) -> Void in }) { $0 }
+            .onFail({
+                print("failed to import records")
+        }).onFinish { importedRecords in
             
-            print(headerValues) // => ["firstName", "lastName"]
-            
-        }) { $0 }.onFail({ 
-            print("fail")
-        }) .onFinish { importedRecords in
-            
-            for record in importedRecords {
-                print(record) // => e.g. ["firstName": "Harry", "lastName": "Potter"]
-                print(record["firstName"]) // prints "Harry" on first, "Hermione" on second run
-                print(record["lastName"]) // prints "Potter" on first, "Granger" on second run
-            }
-            
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), { 
+                var newRecordsArray : Array<Dictionary<String, String>> = Array()
+                for record in importedRecords {
+                    autoreleasepool({
+                        var newDictionary : Dictionary<String, String> = Dictionary()
+                        for (key, value) in record {
+                            
+                            autoreleasepool({
+                            
+                                var newKey = key.stringByReplacingOccurrencesOfString("\"", withString: "")
+                                newKey = newKey.stringByTrimmingCharactersInSet(.newlineCharacterSet())
+                                
+                                var newValue = value.stringByReplacingOccurrencesOfString("\"", withString: "")
+                                newValue = newValue.stringByTrimmingCharactersInSet(.newlineCharacterSet())
+                                
+                                newDictionary.updateValue(newValue, forKey: newKey)
+                            })
+                        }
+                        newRecordsArray.append(newDictionary)
+                    })
+                }
+                dispatch_async(dispatch_get_main_queue(), { 
+                    completion(newRecordsArray)
+                })
+            })
+
         }
-        
-        NSFileManager.defaultManager().fileExistsAtPath("file:///Users/Aya/Library/Developer/CoreSimulator/Devices/C0616519-F70C-4D24-8E1F-CE2F984FCED4/data/Containers/Data/Application/84464528-D97A-452C-B924-426E9A593F72/Documents/fare_attributes.txt")
-        
-        
-//        importer.startImportingRecords(structure: { (headerValues) in
-//            print(headerValues)
-//        }) { $0 }.onFinish({ (importedRecords) in
-//            print(importedRecords)
-//        })
+
     }
     
     func GTFSFileToArray(data: NSData, completion: (Array<Dictionary<String, AnyObject>>?) -> Void){
@@ -103,17 +110,20 @@ class GTFSParser {
         }
     }
     
-    func parse<T:Object>(url: String, className: T.Type){
-        self.parseFromURL(url) { (resultsArray) in
+    func parse<T:Object>(fileRepresentation : Array<Dictionary<String, String>>, className: T.Type){
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0)) { 
             let realm = try! Realm()
-            for object in resultsArray{
-                let newEntry = className.init()
-                for (key, value) in object{
-                    newEntry.setValue(value, forKey: key)
-                }
-                try! realm.write {
-                    realm.add(newEntry)
-                }
+            for object in fileRepresentation{
+                autoreleasepool({ 
+                    let newEntry = className.init()
+                    for (key, value) in object{
+                        newEntry.setValue(value, forKey: key)
+                    }
+                    try! realm.write {
+                        realm.add(newEntry)
+                        print("realm addes entry:\n\(newEntry)\n")
+                    }
+                })
             }
         }
     }

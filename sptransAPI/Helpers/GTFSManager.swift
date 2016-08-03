@@ -41,19 +41,35 @@ class GTFSManager {
         for (key, _) in self.fileNames {
             
             dispatch_group_enter(GTFSBundleDispatchGroup)
-            var filePath : NSURL?
-            Alamofire.download(.GET, "\(self.baseURL)/\(key).txt") { (tempURL, response) in
-                let dirURL = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0]
-                let fileName = response.suggestedFilename!
-                filePath = dirURL.URLByAppendingPathComponent(fileName)
-                return filePath!
-                }.response(completionHandler: { (request, resonse, data, error) in
-                    if filePath != nil {
-                        self.fileNames.updateValue(filePath!.URLString, forKey: key)
-                        dispatch_group_leave(GTFSBundleDispatchGroup)
-                    }
-                })
-                
+            
+            let path = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0] as NSURL
+            let customPath = path.URLByAppendingPathComponent("GTFS/\(key).txt")
+            if !NSFileManager.defaultManager().fileExistsAtPath("\(path.relativePath!)/GTFS") {
+                try! NSFileManager.defaultManager().createDirectoryAtPath("\(path.URLByAppendingPathComponent("GTFS").relativePath!)", withIntermediateDirectories: true, attributes: nil)
+            }
+            
+            Alamofire.download(.GET, "\(self.baseURL)/\(key).txt", destination: { (_, _) -> NSURL in
+                return customPath
+            }).response(completionHandler: { (request, resonse, data, error) in
+                    self.fileNames.updateValue(customPath.relativePath!, forKey: key)
+                    dispatch_group_leave(GTFSBundleDispatchGroup)
+            })
+            
+            
+            
+//            var filePath : NSURL?
+//            Alamofire.download(.GET, "\(self.baseURL)/\(key).txt") { (tempURL, response) in
+//                let dirURL = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0]
+//                let fileName = response.suggestedFilename!
+//                filePath = dirURL.URLByAppendingPathComponent(fileName)
+//                return filePath!
+//                }.response(completionHandler: { (request, resonse, data, error) in
+//                    if filePath != nil {
+//                        self.fileNames.updateValue(filePath!.URLString, forKey: key)
+//                        dispatch_group_leave(GTFSBundleDispatchGroup)
+//                    }
+//                })
+            
             
         }
         
