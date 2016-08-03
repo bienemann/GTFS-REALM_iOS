@@ -19,16 +19,27 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/agency.txt", className: GTFSAgency.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/calendar.txt", className: GTFSCalendar.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_attributes.txt", className: GTFSFareAttribute.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_rules.txt", className: GTFSFareRule.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/frequencies.txt", className: GTFSFrequency.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/routes.txt", className: GTFSRoute.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/shapes.txt", className: GTFSShape.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stop_times.txt", className: GTFSStopTime.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stops.txt", className: GTFSStop.self)
-        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/trips.txt", className: GTFSTrip.self)
+        GTFSManager.sharedInstance.downloadGTFS { (finished) in
+            print("fifnished downloading bundle")
+            for (_, value) in GTFSManager.sharedInstance.fileNames {
+                GTFSParser.sharedInstance.parseCSV(value!, completion: { (result) in
+                    print(result)
+                })
+            }
+        }
+        
+        
+        
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/agency.txt", className: GTFSAgency.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/calendar.txt", className: GTFSCalendar.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_attributes.txt", className: GTFSFareAttribute.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/fare_rules.txt", className: GTFSFareRule.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/frequencies.txt", className: GTFSFrequency.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/routes.txt", className: GTFSRoute.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/shapes.txt", className: GTFSShape.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stop_times.txt", className: GTFSStopTime.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/stops.txt", className: GTFSStop.self)
+//        GTFSParser.sharedInstance.parse("http://127.0.0.1:8080/trips.txt", className: GTFSTrip.self)
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {

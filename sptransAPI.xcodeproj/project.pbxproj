@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */; };
+		03E927DF1D519BB800BBAF06 /* GTFSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E927DE1D519BB800BBAF06 /* GTFSManager.swift */; };
 		1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D27F17C1D4F96EA00F896FA /* LineModel.swift */; };
 		1D7C20891D4FDFFC003CC408 /* GTFSAgency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */; };
 		1D7C208B1D4FE238003CC408 /* GTFSRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208A1D4FE238003CC408 /* GTFSRoute.swift */; };
@@ -54,6 +55,7 @@
 
 /* Begin PBXFileReference section */
 		0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TesteLinhaViewController.swift; sourceTree = "<group>"; };
+		03E927DE1D519BB800BBAF06 /* GTFSManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSManager.swift; sourceTree = "<group>"; };
 		1D27F17C1D4F96EA00F896FA /* LineModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineModel.swift; sourceTree = "<group>"; };
 		1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSAgency.swift; sourceTree = "<group>"; };
 		1D7C208A1D4FE238003CC408 /* GTFSRoute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSRoute.swift; sourceTree = "<group>"; };
@@ -162,6 +164,7 @@
 			children = (
 				1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */,
 				1DEAD3CC1D51142A006560F3 /* GTFSParser.swift */,
+				03E927DE1D519BB800BBAF06 /* GTFSManager.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -531,6 +534,7 @@
 				1D7C208F1D4FEAE4003CC408 /* GTFSFareAttribute.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
 				1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */,
+				03E927DF1D519BB800BBAF06 /* GTFSManager.swift in Sources */,
 				1D7C208D1D4FEA24003CC408 /* GTFSFareRule.swift in Sources */,
 				1DEAD3C11D510CAE006560F3 /* GTFSCalendar.swift in Sources */,
 			);

@@ -9,6 +9,7 @@
 import Foundation
 import Alamofire
 import RealmSwift
+import CSVImporter
 
 class GTFSParser {
     
@@ -24,6 +25,37 @@ class GTFSParser {
                 }
             })
         }
+    }
+    
+    func parseCSV(filePath : String, completion: (Array<Dictionary<String, AnyObject>>?) -> Void){
+        
+        
+        
+        let importer = CSVImporter<[String: String]>(path: filePath)
+        importer.startImportingRecords(structure: { (headerValues) -> Void in
+            
+            print(headerValues) // => ["firstName", "lastName"]
+            
+        }) { $0 }.onFail({ 
+            print("fail")
+        }) .onFinish { importedRecords in
+            
+            for record in importedRecords {
+                print(record) // => e.g. ["firstName": "Harry", "lastName": "Potter"]
+                print(record["firstName"]) // prints "Harry" on first, "Hermione" on second run
+                print(record["lastName"]) // prints "Potter" on first, "Granger" on second run
+            }
+            
+        }
+        
+        NSFileManager.defaultManager().fileExistsAtPath("file:///Users/Aya/Library/Developer/CoreSimulator/Devices/C0616519-F70C-4D24-8E1F-CE2F984FCED4/data/Containers/Data/Application/84464528-D97A-452C-B924-426E9A593F72/Documents/fare_attributes.txt")
+        
+        
+//        importer.startImportingRecords(structure: { (headerValues) in
+//            print(headerValues)
+//        }) { $0 }.onFinish({ (importedRecords) in
+//            print(importedRecords)
+//        })
     }
     
     func GTFSFileToArray(data: NSData, completion: (Array<Dictionary<String, AnyObject>>?) -> Void){
