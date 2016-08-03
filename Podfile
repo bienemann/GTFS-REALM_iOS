@@ -10,6 +10,7 @@ target 'sptransAPI' do
 	pod 'ObjectMapper', '~> 1.3'
 	pod 'SVProgressHUD'
 	pod 'RealmSwift'
+	pod 'CSVImporter', '~> 1.1'
 end
 
 target 'sptransAPITests' do

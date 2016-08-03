@@ -1,0 +1,6 @@
+framework module FileKit {
+  umbrella header "Dschee-FileKit-umbrella.h"
+
+  export *
+  module * { export * }
+}
