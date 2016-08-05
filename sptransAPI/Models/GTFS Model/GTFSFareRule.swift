@@ -12,10 +12,10 @@ import RealmSwift
 class GTFSFareRule: Object {
     
     dynamic var fare_id  : String = ""
-    let route_id = RealmOptional<Int>()
-    let origin_id = RealmOptional<Int>()
-    let destination_id = RealmOptional<Int>()
-    let contains_id = RealmOptional<Int>()
+    dynamic var route_id : String? = nil
+    dynamic var origin_id : String? = nil
+    dynamic var destination_id : String? = nil
+    dynamic var contains_id : String? = nil
     
 // Specify properties to ignore (Realm won't persist these)
     

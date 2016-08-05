@@ -11,9 +11,16 @@ import Alamofire
 import RealmSwift
 import CSVImporter
 
-class GTFSParser {
+class GTFSParser : NSObject, CSVParserDelegate{
     
     static let sharedInstance = GTFSParser()
+    
+    func parseWithCheese(filePath: String, returnObject: [String : AnyObject] -> Object){
+        let parser = CSVParser(path: filePath, delegate: self)
+        parser.indexed = true
+        parser.converterClosure = returnObject
+        parser.startReader()
+    }
     
     func parseFromURL(urlString : String, completion: Array<Dictionary<String, AnyObject>> -> Void){
         Alamofire.request(.GET, urlString).responseData { (response) in
@@ -26,6 +33,19 @@ class GTFSParser {
             })
         }
     }
+    
+    func parserDidStartDocument(parser: CSVParser) {
+        
+    }
+    
+    func parserDidEndDocument(parser: CSVParser) {
+        
+    }
+    
+    func parserDidReadLine<T : CollectionType>(parser: CSVParser, line: T) {
+        print(line)
+    }
+    
     
     func parseCSV(filePath : String, completion: (Array<Dictionary<String, String>>?) -> Void){
         

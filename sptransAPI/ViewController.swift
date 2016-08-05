@@ -22,48 +22,84 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         GTFSManager.sharedInstance.downloadGTFS { (finished) in
             print("Finished downloading bundle files")
             for (key, value) in GTFSManager.sharedInstance.fileNames {
-                GTFSParser.sharedInstance.parseCSV(value!, completion: { (result) in
+//                GTFSParser.sharedInstance.parseCSV(value!, completion: { (result) in
                     switch key{
                     case "agency":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSAgency.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSAgency.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSAgency(value: collection)
+                        })
                         break
                     case "calendar":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendar.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendar.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSCalendar(value: collection)
+                        })
                         break
                     case "fare_attributes":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareAttribute.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareAttribute.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSFareAttribute(value: collection)
+                        })
                         break
                     case "fare_rules":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareRule.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareRule.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSFareRule(value: collection)
+                        })
                         break
                     case "frequencies":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSFrequency.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSFrequency.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSFrequency(value: collection)
+                        })
                         break
                     case "routes":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSRoute.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSRoute.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSRoute(value: collection)
+                        })
                         break
                     case "shapes":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSShape.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSShape.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSShape(value: collection)
+                        })
                         break
                     case "stop_times":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSStopTime.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSStopTime.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSStopTime(value: collection)
+                        })
                         break
                     case "stops":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSStop.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSStop.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSStop(value: collection)
+                        })
                         break
                     case "trips":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSTrip.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSTrip.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSTrip(value: collection)
+                        })
                         break
                     case "transfers":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSTransfer.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSTransfer.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSTransfer(value: collection)
+                        })
                         break
                     case "calendar_dates":
-                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendarDates.self)
+//                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendarDates.self)
+                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
+                            return GTFSCalendarDates(value: collection)
+                        })
                         break
                     default:
                         break
                     }
-                })
+//                })
             }
         }
         
