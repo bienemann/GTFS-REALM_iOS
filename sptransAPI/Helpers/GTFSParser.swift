@@ -13,12 +13,12 @@ import CSVImporter
 
 class GTFSParser : NSObject, CSVParserDelegate{
     
-    static let sharedInstance = GTFSParser()
+//    static let sharedInstance = GTFSParser()
     
-    func parseWithCheese(filePath: String, returnObject: [String : AnyObject] -> Object){
+    func parseWithCheese(filePath: String, processValues: (structure: [String], line: [AnyObject]) -> Object?){
         let parser = CSVParser(path: filePath, delegate: self)
         parser.indexed = true
-        parser.converterClosure = returnObject
+        parser.converterClosure = processValues
         parser.startReader()
     }
     
@@ -43,7 +43,7 @@ class GTFSParser : NSObject, CSVParserDelegate{
     }
     
     func parserDidReadLine<T : CollectionType>(parser: CSVParser, line: T) {
-        print(line)
+//        print(line)
     }
     
     
@@ -146,6 +146,20 @@ class GTFSParser : NSObject, CSVParserDelegate{
                 })
             }
         }
+    }
+    
+    func parseLine<T:Object>(structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{
+        
+        if structure.count == line.count {
+            let newEntry = model.init()
+            for (index, key) in structure.enumerate(){
+                newEntry.setValue(line[index], forKey: key)
+            }
+            return newEntry
+        }
+        
+        print("problem creating realm object")
+        return nil
     }
     
     

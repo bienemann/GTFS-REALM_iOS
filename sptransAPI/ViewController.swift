@@ -22,84 +22,54 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         GTFSManager.sharedInstance.downloadGTFS { (finished) in
             print("Finished downloading bundle files")
             for (key, value) in GTFSManager.sharedInstance.fileNames {
-//                GTFSParser.sharedInstance.parseCSV(value!, completion: { (result) in
+                autoreleasepool({ 
+                    var classType : Object.Type = Object.self
                     switch key{
                     case "agency":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSAgency.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSAgency(value: collection)
-                        })
+                        classType = GTFSAgency.self
                         break
                     case "calendar":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendar.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSCalendar(value: collection)
-                        })
+                        classType = GTFSCalendar.self
                         break
                     case "fare_attributes":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareAttribute.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSFareAttribute(value: collection)
-                        })
+                        classType = GTFSFareAttribute.self
                         break
                     case "fare_rules":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSFareRule.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSFareRule(value: collection)
-                        })
+                        classType = GTFSFareRule.self
                         break
                     case "frequencies":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSFrequency.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSFrequency(value: collection)
-                        })
+                        classType = GTFSFrequency.self
                         break
                     case "routes":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSRoute.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSRoute(value: collection)
-                        })
+                        classType = GTFSRoute.self
                         break
                     case "shapes":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSShape.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSShape(value: collection)
-                        })
+                        classType = GTFSShape.self
                         break
                     case "stop_times":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSStopTime.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSStopTime(value: collection)
-                        })
+                        classType = GTFSStopTime.self
                         break
                     case "stops":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSStop.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSStop(value: collection)
-                        })
+                        classType = GTFSStop.self
                         break
                     case "trips":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSTrip.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSTrip(value: collection)
-                        })
+                        classType = GTFSTrip.self
                         break
                     case "transfers":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSTransfer.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSTransfer(value: collection)
-                        })
+                        classType = GTFSTransfer.self
                         break
                     case "calendar_dates":
-//                        GTFSParser.sharedInstance.parse(result!, className: GTFSCalendarDates.self)
-                        GTFSParser.sharedInstance.parseWithCheese(value!, returnObject: { (collection) -> Object in
-                            return GTFSCalendarDates(value: collection)
-                        })
+                        classType = GTFSCalendarDates.self
                         break
                     default:
                         break
                     }
-//                })
+                    print("\nparsing \(key)")
+                    let parser = GTFSParser()
+                    parser.parseWithCheese(value!, processValues: { (structure, line) -> Object? in
+                        return parser.parseLine(structure, line: line, model: classType)
+                    })
+                })
             }
         }
         

@@ -31,33 +31,6 @@ import RealmSwift
 /// A class for handling comma-separated-values text files.
 /// The value delimiter defaults to "," but can be any other character you like.
 
-extension Dictionary
-{
-    public init(keys: [Key], values: [Value])
-    {
-        precondition(keys.count == values.count)
-        
-        self.init()
-        
-        for (index, key) in keys.enumerate()
-        {
-            self[key] = values[index]
-        }
-    }
-}
-
-extension CollectionType {
-    func glbs<K, V>
-        (transform:(element: Self.Generator.Element) -> (key: K, value: V)?) -> [K : V] {
-        var dictionary = [K : V]()
-        for e in self {
-            if let (key, value) = transform(element: e) {
-                dictionary[key] = value
-            }
-        }
-        return dictionary
-    }
-}
 
 public class CSVParser: NSObject
 {
@@ -67,7 +40,7 @@ public class CSVParser: NSObject
     private var quote: UInt32
     public var indexed: Bool = false
     public var header : [String] = []
-    public var converterClosure : (([String: AnyObject]) -> Object)?
+    public var converterClosure : (([String], [AnyObject]) -> Object?)?
     
     /// The current line number being processed in the CSV file
     public var lineCount = 0
@@ -133,38 +106,48 @@ public class CSVParser: NSObject
                 
                 let realm = try! Realm()
                 realm.beginWrite()
+                let startDate = NSDate()
                 
                 while line != nil
                 {
-                    let parsedLine = parse(line!)
-                    lineCount += 1
-                    
-                    if lineCount != 1{
-                        if self.indexed {
-                            if self.converterClosure != nil {
-                                realm.add(converterClosure!(Dictionary.init(keys: self.header, values: parsedLine)))
-                            }else{
-                                d.parserDidReadLine(self, line: zipToDict(self.header, values: parsedLine))
+                    autoreleasepool({ 
+                        let parsedLine = parse(line!)
+                        lineCount += 1
+                        
+                        if lineCount != 1{
+                            if self.indexed {
+                                if self.converterClosure != nil {
+                                    if let entry = converterClosure!(self.header, parsedLine) {
+                                        realm.add(entry)
+                                    }else{
+                                        
+                                        //To-do: tratar erro
+                                        
+                                    }
+                                }else{
+                                    d.parserDidReadLine(self, line: zipToDict(self.header, values: parsedLine))
+                                }
                             }
-                        }else {
-                            d.parserDidReadLine(self, line: parsedLine)
+                        }else{
+                            self.header = parsedLine
                         }
-                    }else{
-                        self.header = parsedLine
-                    }
-                    
-                    line = csvStreamReader.nextLine()
-                    
-                    if lineCount % 10000 == 0 {
-                        try! realm.commitWrite()
-                        print("committing objects; count: \(lineCount)")
-                        realm.beginWrite()
-                    }
-                    
+                        
+                        d.parserDidReadLine(self, line: parsedLine)
+                        line = csvStreamReader.nextLine()
+                        
+                        if lineCount % 10000 == 0 {
+                            try! realm.commitWrite()
+                            //                        print("committing objects; count: \(lineCount)")
+                            realm.beginWrite()
+                        }
+                    })
+
                 }
                 
                 try! realm.commitWrite()
                 print("committing objects; count: \(lineCount)")
+                let finishDate = NSDate()
+                print(String(format: "time elapsed: %.2f seconds", finishDate.timeIntervalSinceDate(startDate)))
                 csvStreamReader.close()
             }
             
