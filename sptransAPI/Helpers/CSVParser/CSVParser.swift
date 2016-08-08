@@ -40,7 +40,12 @@ public class CSVParser: NSObject
     private var quote: UInt32
     public var indexed: Bool = false
     public var header : [String] = []
+    
     public var converterClosure : (([String], [AnyObject]) -> Object?)?
+
+    public var doBeforeLine: ((CSVParser, [String]) -> Void)?
+    public var doWhileProcessingLine: ((CSVParser, [String]) -> Void)?
+    public var doAfterLine: ((CSVParser, [String]) -> Void)?
     
     /// The current line number being processed in the CSV file
     public var lineCount = 0
@@ -58,6 +63,10 @@ public class CSVParser: NSObject
     private var spaces		= 0
     private var entryPos	= 0
     
+    private var startClosure : (CSVParser->Void)?
+    private var endClosure : (CSVParser->Void)?
+    private var readLineClosure : ((CSVParser, [AnyObject]) -> Void)?
+    
     private let csvTab: UInt32		= 0x09
     private let csvSpace: UInt32	= 0x20
     private let csvCR: UInt32		= 0x0d
@@ -70,20 +79,23 @@ public class CSVParser: NSObject
     /// - Parameters:
     ///   - path: an input path for a CSV reader or an output path for a writer.
     ///   - delegate: the parser delegate object
-    public init(path: String, delegate: CSVParserDelegate)
-    {
-        self.csvFile = TextFile(path: path)
-        self.delegate = delegate
+    public init(path: String, structure: Bool = false,
+                didStartDocument: (CSVParser->Void)? = nil,
+                didEndDocument: (CSVParser->Void)? = nil,
+                didReadLine: ((CSVParser, [AnyObject]) -> Void)? = nil){
         
+        self.csvFile = TextFile(path: path)
         self.delimiter = ""
         self.delim = 0
         self.quote = 0
+        
+        self.startClosure = didStartDocument
+        self.endClosure = didEndDocument
+        self.readLineClosure = didReadLine
+        
+        self.indexed = structure
+        
     }
-    
-    
-    /// delegate management. The delegate is not retained.
-    weak public var delegate: CSVParserDelegate?
-    
     
     /// A CSV reader.
     /// - Parameters:
@@ -96,84 +108,42 @@ public class CSVParser: NSObject
         self.quote	= (quote.unicodeScalars.first?.value)!
         
         lineCount = 0
-        if let d = delegate
-        {
-            d.parserDidStartDocument(self)
-            
-            if let csvStreamReader = self.csvFile.reader()
-            {
-                var line = csvStreamReader.nextLine()
-                
-                let realm = try! Realm()
-                realm.beginWrite()
-                let startDate = NSDate()
-                
-                while line != nil
-                {
-                    autoreleasepool({ 
-                        let parsedLine = parse(line!)
-                        lineCount += 1
-                        
-                        if lineCount != 1{
-                            if self.indexed {
-                                if self.converterClosure != nil {
-                                    if let entry = converterClosure!(self.header, parsedLine) {
-                                        realm.add(entry)
-                                    }else{
-                                        
-                                        //To-do: tratar erro
-                                        
-                                    }
-                                }else{
-                                    d.parserDidReadLine(self, line: zipToDict(self.header, values: parsedLine))
-                                }
-                            }
-                        }else{
-                            self.header = parsedLine
-                        }
-                        
-                        d.parserDidReadLine(self, line: parsedLine)
-                        line = csvStreamReader.nextLine()
-                        
-                        if lineCount % 10000 == 0 {
-                            try! realm.commitWrite()
-                            //                        print("committing objects; count: \(lineCount)")
-                            realm.beginWrite()
-                        }
-                    })
 
-                }
-                
-                try! realm.commitWrite()
-                print("committing objects; count: \(lineCount)")
-                let finishDate = NSDate()
-                print(String(format: "time elapsed: %.2f seconds", finishDate.timeIntervalSinceDate(startDate)))
-                csvStreamReader.close()
+        if startClosure != nil { startClosure!(self) }
+        
+        if let csvStreamReader = self.csvFile.reader(){
+            
+            var line = csvStreamReader.nextLine()
+            while line != nil{
+                autoreleasepool({ 
+                    
+                    let parsedLine = parse(line!)
+                    lineCount += 1
+                    
+                    if doBeforeLine != nil { doBeforeLine!(self, parsedLine) }
+                    
+                    if self.indexed {
+                        if lineCount == 1 {
+                            self.header = parsedLine
+                            return
+                        }
+                        if readLineClosure != nil { readLineClosure!(self, parsedLine) }
+                        if doWhileProcessingLine != nil { doWhileProcessingLine!(self, parsedLine) }
+                    }else{
+                        if readLineClosure != nil { readLineClosure!(self, parsedLine) }
+                    }
+                    
+                    line = csvStreamReader.nextLine()
+                    
+                    if doAfterLine != nil { doAfterLine!(self, parsedLine) }
+                })
             }
             
-            d.parserDidEndDocument(self)
+            csvStreamReader.close()
         }
+
+        if endClosure != nil { endClosure!(self) }
     }
-    
-    
-    func zipToDict<
-        S0 : SequenceType,
-        S1 : SequenceType where
-        S0.Generator.Element : Hashable
-        >(keys: S0, values: S1) -> [String:AnyObject] {
-        var dict: [String:AnyObject] = [:]
-        for (key, value) in zip(keys, values) {
-//            if (value as! String).characters.count > 0 {
-//                if Int(value as! String) != nil {
-//                    dict[(key as! String)] = (value as! Int)
-//                }
-//                dict[(key as! String)] = value as! String
-//            }
-            dict[(key as! String)] = value as? AnyObject
-        }
-        return dict
-    }
-    
     
     /// A CSV writer.
     /// - Parameters:
@@ -385,19 +355,3 @@ public class CSVParser: NSObject
     }
 }
 
-
-/// CSVParser Delegate Protocol
-public protocol CSVParserDelegate: NSObjectProtocol
-{
-    /// sent when the parser begins parsing the document.
-    func parserDidStartDocument(parser: CSVParser)
-    
-    /// sent when the parser has completed parsing. If this is encountered, the parse was successful.
-    func parserDidEndDocument(parser: CSVParser)
-    
-    /// sent to the delegate for each line in the CSV document
-    /// - Parameters:
-    ///   - parser: the CSVParser object
-    ///   - line: an array of strings, one element for each delimited field in the line
-    func parserDidReadLine<T:CollectionType>(parser: CSVParser, line: T)
-}

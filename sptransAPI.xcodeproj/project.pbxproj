@@ -166,19 +166,12 @@
 		1D7D94EA1D4BF3F400CEBB4A /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
-				1DC7EB351D55004F00254EDE /* WholeCheeseCSVParser */,
+				1DC7EB351D55004F00254EDE /* CSVParser */,
 				1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */,
 				1DEAD3CC1D51142A006560F3 /* GTFSParser.swift */,
 				03E927DE1D519BB800BBAF06 /* GTFSManager.swift */,
 			);
 			path = Helpers;
-			sourceTree = "<group>";
-		};
-		1D7D94EB1D4BF40300CEBB4A /* Models */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Models;
 			sourceTree = "<group>";
 		};
 		1DC24C021D4BD8A300ADF874 = {
@@ -209,7 +202,6 @@
 				1D27F17B1D4F96A200F896FA /* Models */,
 				0310709C1D4C42CD0020F417 /* ViewControllers */,
 				1D7D94EA1D4BF3F400CEBB4A /* Helpers */,
-				1D7D94EB1D4BF40300CEBB4A /* Models */,
 				1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */,
 				1DC24C101D4BD8A300ADF874 /* ViewController.swift */,
 				1DC24C121D4BD8A300ADF874 /* Main.storyboard */,
@@ -238,13 +230,13 @@
 			path = sptransAPIUITests;
 			sourceTree = "<group>";
 		};
-		1DC7EB351D55004F00254EDE /* WholeCheeseCSVParser */ = {
+		1DC7EB351D55004F00254EDE /* CSVParser */ = {
 			isa = PBXGroup;
 			children = (
 				1DC7EB361D55007B00254EDE /* TextFile.swift */,
 				1DC7EB381D55009700254EDE /* CSVParser.swift */,
 			);
-			path = WholeCheeseCSVParser;
+			path = CSVParser;
 			sourceTree = "<group>";
 		};
 		877FD71DAB7D2080FDE84459 /* Pods */ = {
@@ -697,6 +689,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = sptransAPI/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" -DDEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bienemann.prototype.sptransAPI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

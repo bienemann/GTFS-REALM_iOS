@@ -19,59 +19,9 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        GTFSManager.sharedInstance.downloadGTFS { (finished) in
-            print("Finished downloading bundle files")
-            for (key, value) in GTFSManager.sharedInstance.fileNames {
-                autoreleasepool({ 
-                    var classType : Object.Type = Object.self
-                    switch key{
-                    case "agency":
-                        classType = GTFSAgency.self
-                        break
-                    case "calendar":
-                        classType = GTFSCalendar.self
-                        break
-                    case "fare_attributes":
-                        classType = GTFSFareAttribute.self
-                        break
-                    case "fare_rules":
-                        classType = GTFSFareRule.self
-                        break
-                    case "frequencies":
-                        classType = GTFSFrequency.self
-                        break
-                    case "routes":
-                        classType = GTFSRoute.self
-                        break
-                    case "shapes":
-                        classType = GTFSShape.self
-                        break
-                    case "stop_times":
-                        classType = GTFSStopTime.self
-                        break
-                    case "stops":
-                        classType = GTFSStop.self
-                        break
-                    case "trips":
-                        classType = GTFSTrip.self
-                        break
-                    case "transfers":
-                        classType = GTFSTransfer.self
-                        break
-                    case "calendar_dates":
-                        classType = GTFSCalendarDates.self
-                        break
-                    default:
-                        break
-                    }
-                    print("\nparsing \(key)")
-                    let parser = GTFSParser()
-                    parser.parseWithCheese(value!, processValues: { (structure, line) -> Object? in
-                        return parser.parseLine(structure, line: line, model: classType)
-                    })
-                })
-            }
-        }
+        if GTFSManager.isDatabasePopulated(populate: true) == true {
+            print("dtabase already up to date")
+        }else{ print("downloading files and populating database") }
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {
@@ -87,19 +37,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         self.navigationItem.title = "Home"
         self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.blackColor()]
-        
-        let realm = try! Realm()
-        let agencyResult = realm.objects(GTFSAgency.self).filter("agency_name = 'SPTRANS'")
-        if agencyResult.count > 0 {
-            let agency = agencyResult.first!
-            if agency.agency_name == "SPTRANS" {
-                print("SPTRANS ja existe no banco")
-            }else{
-                print("ha algo no banco mas não é sptrans")
-            }
-        }else{
-            print("ooops something is wrong")
-        }
         
         if segue.identifier == "open_test"{
         
