@@ -135,6 +135,7 @@ class GTFSManager {
         dispatch_group_notify(GTFSBundleDispatchGroup, downloadQueue, {
             dispatch_async(dispatch_get_main_queue(), {
                 finished(true)
+                //to-do: testar se os arquivos foram baixados com sucesso
             })
         })
         

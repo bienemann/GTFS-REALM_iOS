@@ -125,6 +125,7 @@ public class CSVParser: NSObject
                     if self.indexed {
                         if lineCount == 1 {
                             self.header = parsedLine
+                            line = csvStreamReader.nextLine()
                             return
                         }
                         if readLineClosure != nil { readLineClosure!(self, parsedLine) }
