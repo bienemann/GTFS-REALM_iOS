@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSRoute: Object {
+class GTFSRoute: GTFSBaseModel {
     
     dynamic var route_id : String = ""
     dynamic var agency_id : String? = nil
@@ -23,6 +23,21 @@ class GTFSRoute: Object {
     
     override static func primaryKey() -> String? {
         return "route_id"
+    }
+    
+    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+        return { (key,value) in
+            
+            switch key {
+            case "route_type":
+                if value is NSNumber {
+                    return value.integerValue!
+                }else{ return value }
+            default:
+                return value
+            }
+            
+        }
     }
     
 // Specify properties to ignore (Realm won't persist these)

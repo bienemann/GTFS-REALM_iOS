@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSCalendarDates: Object {
+class GTFSCalendarDates: GTFSBaseModel {
     
     dynamic var service_id : String = ""
     dynamic var date : String = ""

@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSFareAttribute: Object {
+class GTFSFareAttribute: GTFSBaseModel {
     
     dynamic var fare_id : String = ""
     dynamic var price : Double = 0.0
@@ -20,6 +20,22 @@ class GTFSFareAttribute: Object {
     
     override static func primaryKey() -> String? {
         return "fare_id"
+    }
+    
+    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+        return { (key,value) in
+            
+            switch key {
+            case "transfer_duration": fallthrough
+            case "payment_method":
+                if value is NSNumber {
+                    return value.integerValue!
+                }else{ return value }
+            default:
+                return value
+            }
+            
+        }
     }
     
 // Specify properties to ignore (Realm won't persist these)

@@ -47,7 +47,7 @@ class GTFSManager {
             print("Finished downloading GTFS files\nstarting parse\n")
             for (key, value) in GTFSManager.sharedInstance.fileNames {
                 autoreleasepool({
-                    var classType : Object.Type = Object.self
+                    var classType : GTFSBaseModel.Type = GTFSBaseModel.self
                     switch key{
                     case "agency":
                         classType = GTFSAgency.self
@@ -90,7 +90,7 @@ class GTFSManager {
                     }
                     print("parsing \(key)")
                     let parser = GTFSParser()
-                    parser.parseDocument(value!, processValues: { (structure, line) -> Object? in
+                    parser.parseDocument(value!, processValues: { (structure, line) -> GTFSBaseModel? in
                         return parser.parseLine(structure, line: line, model: classType)
                     })
                 })

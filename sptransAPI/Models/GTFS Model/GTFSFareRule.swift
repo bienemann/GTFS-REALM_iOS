@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSFareRule: Object {
+class GTFSFareRule: GTFSBaseModel {
     
     dynamic var fare_id  : String = ""
     dynamic var route_id : String? = nil

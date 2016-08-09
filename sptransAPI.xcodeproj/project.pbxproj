@@ -15,6 +15,7 @@
 		1D7C208D1D4FEA24003CC408 /* GTFSFareRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208C1D4FEA24003CC408 /* GTFSFareRule.swift */; };
 		1D7C208F1D4FEAE4003CC408 /* GTFSFareAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208E1D4FEAE4003CC408 /* GTFSFareAttribute.swift */; };
 		1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */; };
+		1DA227DB1D5A5F58002E563A /* GTFSBaseModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA227DA1D5A5F58002E563A /* GTFSBaseModel.swift */; };
 		1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */; };
 		1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C101D4BD8A300ADF874 /* ViewController.swift */; };
 		1DC24C141D4BD8A300ADF874 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1DC24C121D4BD8A300ADF874 /* Main.storyboard */; };
@@ -66,6 +67,7 @@
 		1D7C208C1D4FEA24003CC408 /* GTFSFareRule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSFareRule.swift; sourceTree = "<group>"; };
 		1D7C208E1D4FEAE4003CC408 /* GTFSFareAttribute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSFareAttribute.swift; sourceTree = "<group>"; };
 		1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPTransAPI.swift; sourceTree = "<group>"; };
+		1DA227DA1D5A5F58002E563A /* GTFSBaseModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSBaseModel.swift; sourceTree = "<group>"; };
 		1DC24C0B1D4BD8A300ADF874 /* sptransAPI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sptransAPI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1DC24C101D4BD8A300ADF874 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 				1DEAD3C61D510F54006560F3 /* GTFSStopTime.swift */,
 				1DEAD3C81D5110AE006560F3 /* GTFSStop.swift */,
 				1DEAD3CA1D5111D4006560F3 /* GTFSTransfer.swift */,
+				1DA227DA1D5A5F58002E563A /* GTFSBaseModel.swift */,
 			);
 			path = "GTFS Model";
 			sourceTree = "<group>";
@@ -542,6 +545,7 @@
 			files = (
 				1DEAD3CD1D51142A006560F3 /* GTFSParser.swift in Sources */,
 				1D7C20891D4FDFFC003CC408 /* GTFSAgency.swift in Sources */,
+				1DA227DB1D5A5F58002E563A /* GTFSBaseModel.swift in Sources */,
 				1DEAD3BF1D510B93006560F3 /* GTFSFrequency.swift in Sources */,
 				1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */,
 				1DEAD3C91D5110AE006560F3 /* GTFSStop.swift in Sources */,

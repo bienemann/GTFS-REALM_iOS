@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSAgency: Object {
+class GTFSAgency: GTFSBaseModel {
     
     dynamic var agency_id : String = ""
     dynamic var agency_name : String = ""

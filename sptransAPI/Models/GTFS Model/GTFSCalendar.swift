@@ -8,19 +8,47 @@
 
 import Foundation
 import RealmSwift
+import Realm
 
-class GTFSCalendar: Object {
+class GTFSCalendar: GTFSBaseModel {
     
     dynamic var service_id : String = ""
-    dynamic var monday = false
-    dynamic var tuesday = false
-    dynamic var wednesday = false
-    dynamic var thursday = false
-    dynamic var friday = false
-    dynamic var saturday = false
-    dynamic var sunday = false
+    dynamic var monday : Bool = false
+    dynamic var tuesday : Bool = false
+    dynamic var wednesday : Bool = false
+    dynamic var thursday : Bool = false
+    dynamic var friday : Bool = false
+    dynamic var saturday : Bool = false
+    dynamic var sunday : Bool = false
     dynamic var start_date : String = ""
     dynamic var end_date : String = ""
+    
+    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+        return { (key,value) in
+            
+            if key == "end_date" {
+                if value is NSNumber {
+                    return value.stringValue!
+                }
+            }
+            
+            if  key == "monday" ||
+                key == "tuesday" ||
+                key == "wednesday" ||
+                key == "thursday" ||
+                key == "friday" ||
+                key == "saturday" ||
+                key == "sunday" {
+                
+                if value is NSNumber {
+                    return value.boolValue!
+                }
+                
+            }
+            
+            return value
+        }
+    }
     
 // Specify properties to ignore (Realm won't persist these)
     

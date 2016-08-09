@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSStop: Object {
+class GTFSStop: GTFSBaseModel {
     
     dynamic var stop_id : Int = -1
     dynamic var stop_code : String? = nil
@@ -26,6 +26,21 @@ class GTFSStop: Object {
     
     override static func primaryKey() -> String? {
         return "stop_id"
+    }
+    
+    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+        return { (key,value) in
+            
+            switch key {
+            case "stop_id":
+                if value is NSNumber {
+                    return value.integerValue!
+                }else{ return value }
+            default:
+                return value
+            }
+            
+        }
     }
     
 // Specify properties to ignore (Realm won't persist these)

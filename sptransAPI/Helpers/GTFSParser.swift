@@ -24,7 +24,7 @@ class GTFSParser : NSObject{
     }
     #endif
     
-    func parseDocument(filePath: String, processValues: (structure: [String], line: [AnyObject]) -> Object?){
+    func parseDocument(filePath: String, processValues: (structure: Array<String>, line: Array<AnyObject>) -> GTFSBaseModel?){
         
         let parser = CSVParser(path: filePath, structure: true,
                                
@@ -56,14 +56,10 @@ class GTFSParser : NSObject{
         parser.startReader()
     }
     
-    func parseLine<T:Object>(structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{
+    func parseLine<T:GTFSBaseModel>(structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{
         
         if structure.count == line.count {
-            let newEntry = model.init()
-            for (index, key) in structure.enumerate(){
-                newEntry.setValue(line[index], forKey: key)
-            }
-            return newEntry
+            return model.init(values: line, keys: structure, typecast: model.typecast())
         }
         
         print("problem creating realm object")

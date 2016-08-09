@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSTransfer: Object {
+class GTFSTransfer: GTFSBaseModel {
     
     dynamic var from_stop_id : Int = -1
     dynamic var to_stop_id : Int = -1

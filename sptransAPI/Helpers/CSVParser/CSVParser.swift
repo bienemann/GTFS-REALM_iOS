@@ -41,11 +41,11 @@ public class CSVParser: NSObject
     public var indexed: Bool = false
     public var header : [String] = []
     
-    public var converterClosure : (([String], [AnyObject]) -> Object?)?
+    public var converterClosure : (([String], [AnyObject]) -> GTFSBaseModel?)?
 
-    public var doBeforeLine: ((CSVParser, [String]) -> Void)?
-    public var doWhileProcessingLine: ((CSVParser, [String]) -> Void)?
-    public var doAfterLine: ((CSVParser, [String]) -> Void)?
+    public var doBeforeLine: ((CSVParser, [AnyObject]) -> Void)?
+    public var doWhileProcessingLine: ((CSVParser, [AnyObject]) -> Void)?
+    public var doAfterLine: ((CSVParser, [AnyObject]) -> Void)?
     
     /// The current line number being processed in the CSV file
     public var lineCount = 0
@@ -65,7 +65,7 @@ public class CSVParser: NSObject
     
     private var startClosure : (CSVParser->Void)?
     private var endClosure : (CSVParser->Void)?
-    private var readLineClosure : ((CSVParser, [AnyObject]) -> Void)?
+    private var readLineClosure : ((CSVParser, Array<AnyObject>) -> Void)?
     
     private let csvTab: UInt32		= 0x09
     private let csvSpace: UInt32	= 0x20
@@ -82,7 +82,7 @@ public class CSVParser: NSObject
     public init(path: String, structure: Bool = false,
                 didStartDocument: (CSVParser->Void)? = nil,
                 didEndDocument: (CSVParser->Void)? = nil,
-                didReadLine: ((CSVParser, [AnyObject]) -> Void)? = nil){
+                didReadLine: ((CSVParser, Array<AnyObject>) -> Void)? = nil){
         
         self.csvFile = TextFile(path: path)
         self.delimiter = ""
@@ -124,7 +124,7 @@ public class CSVParser: NSObject
                     
                     if self.indexed {
                         if lineCount == 1 {
-                            self.header = parsedLine
+                            self.header = parsedLine as! [String]
                             line = csvStreamReader.nextLine()
                             return
                         }
@@ -166,11 +166,11 @@ public class CSVParser: NSObject
         return components
     }
     
-    private func parse(line: String) -> [String]
+    private func parse(line: String) -> [AnyObject]
     {
         //		print( "\n\(line)")
         
-        var components = [String]()
+        var components = [AnyObject]()
         var field = ""
         
         entryPos	= 0
@@ -251,7 +251,7 @@ public class CSVParser: NSObject
                         }
                         else
                         {
-                            components.append(field)	//	SUBMIT_FIELD
+                            components.append(field.numberValue())	//	SUBMIT_FIELD --can be anything
                             field = ""
                             
                             entryPos	= 0
@@ -284,7 +284,7 @@ public class CSVParser: NSObject
                     field.removeRange(range)
                     
                     entryPos -= (spaces + 1)	//	get rid of spaces and original quote
-                    components.append(field)	//	SUBMIT_FIELD
+                    components.append(field)	//	SUBMIT_FIELD -- might be quoted text
                     field = ""
                     
                     entryPos	= 0
@@ -339,7 +339,7 @@ public class CSVParser: NSObject
         if pstate == .FIELD_BEGUN
         {
             //	We still have an unfinished field
-            components.append(field)
+            components.append(field.numberValue()) // --might be anything, always last component
         }
         else
             if pstate == .FIELD_MIGHT_HAVE_ENDED
@@ -348,7 +348,7 @@ public class CSVParser: NSObject
                 {
                     let range = field.endIndex.advancedBy(-(spaces + 1)) ..< field.endIndex
                     field.removeRange(range)
-                    components.append(field)
+                    components.append(field) // --might be quoted txt, always last omponent
                 }
         }
         
@@ -356,3 +356,14 @@ public class CSVParser: NSObject
     }
 }
 
+extension String {
+    
+    func numberValue() -> AnyObject {
+        if let n = Double(self) {
+            return NSNumber(double: n)
+        }else{
+            return self
+        }
+    }
+
+}

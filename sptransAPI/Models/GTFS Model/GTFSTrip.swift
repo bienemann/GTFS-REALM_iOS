@@ -9,7 +9,7 @@
 import Foundation
 import RealmSwift
 
-class GTFSTrip: Object {
+class GTFSTrip: GTFSBaseModel {
     
     dynamic var route_id : String = ""
     dynamic var service_id : String = ""
@@ -24,6 +24,22 @@ class GTFSTrip: Object {
     
     override static func primaryKey() -> String? {
         return "trip_id"
+    }
+    
+    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+        return { (key,value) in
+            
+            switch key {
+            case "direction_id": fallthrough
+            case "shape_id":
+                if value is NSNumber {
+                    return value.integerValue!
+                }else{ return value }
+            default:
+                return value
+            }
+            
+        }
     }
     
 // Specify properties to ignore (Realm won't persist these)
