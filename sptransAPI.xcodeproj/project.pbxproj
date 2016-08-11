@@ -15,6 +15,8 @@
 		1D7C208D1D4FEA24003CC408 /* GTFSFareRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208C1D4FEA24003CC408 /* GTFSFareRule.swift */; };
 		1D7C208F1D4FEAE4003CC408 /* GTFSFareAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208E1D4FEAE4003CC408 /* GTFSFareAttribute.swift */; };
 		1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */; };
+		1DA07F981D5CEDDF00980EA4 /* TestMapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA07F971D5CEDDF00980EA4 /* TestMapViewController.swift */; };
+		1DA07F9A1D5CEE7900980EA4 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DA07F991D5CEE7900980EA4 /* MapKit.framework */; };
 		1DA227DB1D5A5F58002E563A /* GTFSBaseModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA227DA1D5A5F58002E563A /* GTFSBaseModel.swift */; };
 		1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */; };
 		1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C101D4BD8A300ADF874 /* ViewController.swift */; };
@@ -67,6 +69,8 @@
 		1D7C208C1D4FEA24003CC408 /* GTFSFareRule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSFareRule.swift; sourceTree = "<group>"; };
 		1D7C208E1D4FEAE4003CC408 /* GTFSFareAttribute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSFareAttribute.swift; sourceTree = "<group>"; };
 		1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPTransAPI.swift; sourceTree = "<group>"; };
+		1DA07F971D5CEDDF00980EA4 /* TestMapViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestMapViewController.swift; sourceTree = "<group>"; };
+		1DA07F991D5CEE7900980EA4 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		1DA227DA1D5A5F58002E563A /* GTFSBaseModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSBaseModel.swift; sourceTree = "<group>"; };
 		1DC24C0B1D4BD8A300ADF874 /* sptransAPI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sptransAPI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DC24C0E1D4BD8A300ADF874 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -106,6 +110,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1DA07F9A1D5CEE7900980EA4 /* MapKit.framework in Frameworks */,
 				232FF1CE4F51EF152778AF1A /* Pods_sptransAPI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -133,6 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */,
+				1DA07F971D5CEDDF00980EA4 /* TestMapViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -258,6 +264,7 @@
 		F9BF22193B1E0A18300127E1 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1DA07F991D5CEE7900980EA4 /* MapKit.framework */,
 				F1E26BD1026A200EC2478105 /* Pods_sptransAPI.framework */,
 				8E7101FFA5F7508E56CC4AE4 /* Pods_sptransAPITests.framework */,
 				5371BA4E41738AEFFA5310B5 /* Pods_sptransAPIUITests.framework */,
@@ -342,6 +349,11 @@
 				TargetAttributes = {
 					1DC24C0A1D4BD8A300ADF874 = {
 						CreatedOnToolsVersion = 7.3.1;
+						SystemCapabilities = {
+							com.apple.Maps.iOS = {
+								enabled = 1;
+							};
+						};
 					};
 					1DC24C1E1D4BD8A300ADF874 = {
 						CreatedOnToolsVersion = 7.3.1;
@@ -559,6 +571,7 @@
 				1DEAD3BD1D5109EC006560F3 /* GTFSTrip.swift in Sources */,
 				1DEAD3C51D510E2A006560F3 /* GTFSShape.swift in Sources */,
 				1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */,
+				1DA07F981D5CEDDF00980EA4 /* TestMapViewController.swift in Sources */,
 				1D7C208F1D4FEAE4003CC408 /* GTFSFareAttribute.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
 				1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */,

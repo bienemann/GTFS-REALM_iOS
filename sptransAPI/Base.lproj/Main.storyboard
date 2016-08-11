@@ -44,9 +44,6 @@
                                             <rect key="frame" x="0.0" y="0.0" width="600" height="43"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </tableViewCellContentView>
-                                        <connections>
-                                            <segue destination="zMr-pz-Skc" kind="show" identifier="open_test" id="zDE-eF-WkL"/>
-                                        </connections>
                                     </tableViewCell>
                                 </prototypes>
                                 <connections>
@@ -66,6 +63,8 @@
                     <navigationItem key="navigationItem" title="carregando..." id="1Uv-jf-GHN"/>
                     <connections>
                         <outlet property="tableView" destination="Hxa-sC-UCz" id="eQJ-KO-OJA"/>
+                        <segue destination="zMr-pz-Skc" kind="show" identifier="buscar_linha" id="yMg-C5-Rrg"/>
+                        <segue destination="hDr-Vh-ZAy" kind="show" identifier="testar_mapa" id="bLa-Mu-m86"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -145,6 +144,41 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8a3-88-Mrb" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="604" y="23"/>
+        </scene>
+        <!--Test Map View Controller-->
+        <scene sceneID="uIa-TZ-8p1">
+            <objects>
+                <viewController id="hDr-Vh-ZAy" customClass="TestMapViewController" customModule="sptransAPI" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="gzR-MX-k6q"/>
+                        <viewControllerLayoutGuide type="bottom" id="YGw-ln-WSt"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="52a-PC-fIh">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="AzT-4c-7WQ">
+                                <rect key="frame" x="0.0" y="64" width="600" height="536"/>
+                                <connections>
+                                    <outlet property="delegate" destination="hDr-Vh-ZAy" id="hHy-aB-0Du"/>
+                                </connections>
+                            </mapView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="AzT-4c-7WQ" firstAttribute="bottom" secondItem="YGw-ln-WSt" secondAttribute="top" id="NDe-Bu-hxB"/>
+                            <constraint firstItem="AzT-4c-7WQ" firstAttribute="top" secondItem="gzR-MX-k6q" secondAttribute="bottom" id="dEc-Ch-eq0"/>
+                            <constraint firstAttribute="trailing" secondItem="AzT-4c-7WQ" secondAttribute="trailing" id="dqt-vg-W4j"/>
+                            <constraint firstItem="AzT-4c-7WQ" firstAttribute="leading" secondItem="52a-PC-fIh" secondAttribute="leading" id="wUv-jg-xEF"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="mapView" destination="AzT-4c-7WQ" id="afl-DB-K9M"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="mLf-zK-vmM" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="604" y="803"/>
         </scene>
     </scenes>
 </document>

@@ -13,7 +13,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     @IBOutlet weak var tableView : UITableView!
 
-    let tableViewEntries : [String] = ["buscar linha"]
+    let tableViewEntries : [String] = ["buscar linha", "teste mapa"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,9 +51,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         self.navigationItem.title = "Home"
         self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.blackColor()]
         
-        if segue.identifier == "open_test"{
-        
-        }
     }
 
 
@@ -77,6 +74,21 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
     }
 
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        
+        let entry = self.tableViewEntries[indexPath.row]
+        switch entry {
+        case "buscar linha":
+            self.performSegueWithIdentifier("buscar_linha", sender: tableView.cellForRowAtIndexPath(indexPath))
+            break
+        case "teste mapa":
+            self.performSegueWithIdentifier("testar_mapa", sender: tableView.cellForRowAtIndexPath(indexPath))
+            break
+        default:
+            break
+        }
+        
+    }
     
 }
 
