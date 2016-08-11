@@ -27,23 +27,24 @@ class GTFSManager {
                                      "stops": nil,
                                      "trips": nil]
     
-    class func isDatabasePopulated(populate populate: Bool = false) -> Bool{
+    class func isDatabasePopulated() -> Bool{
         
         let realm = try! Realm()
         let agencyResult = realm.objects(GTFSAgency.self).filter("agency_name = 'SPTRANS'")
         if agencyResult.count > 0 { return true }
-        else {
-            if populate == true {
-                GTFSManager.downloadAndParseDocuments()
-            }
-            return false
-        }
+        else { return false }
         
     }
     
-    class func downloadAndParseDocuments(){
+    class func downloadAndParseDocuments(error: NSError? -> Void) {
         
-        GTFSManager.sharedInstance.downloadGTFS { (finished) in
+        GTFSManager.sharedInstance.downloadGTFS { (finished, err) in
+            
+            if !finished {
+                error(err)
+                return
+            }
+            
             print("Finished downloading GTFS files\nstarting parse\n")
             for (key, value) in GTFSManager.sharedInstance.fileNames {
                 autoreleasepool({
@@ -106,12 +107,14 @@ class GTFSManager {
         return true
     }
     
-    func downloadGTFS(finished: Bool -> Void){
+    func downloadGTFS(finished: (Bool, NSError?) -> Void){
         
         print("starting GTFS files download")
         
         let downloadQueue = dispatch_queue_create("com.mydlqueue", DISPATCH_QUEUE_CONCURRENT)
         let GTFSBundleDispatchGroup = dispatch_group_create()
+        var dirty : Bool = false
+        var dlError : NSError? = nil
         
         for (key, _) in self.fileNames {
             
@@ -126,6 +129,10 @@ class GTFSManager {
             Alamofire.download(.GET, "\(self.baseURL)/\(key).txt", destination: { (_, _) -> NSURL in
                 return customPath
             }).response(completionHandler: { (request, resonse, data, error) in
+                if error != nil {
+                    dirty = true
+                    dlError = error
+                }
                     self.fileNames.updateValue(customPath.relativePath!, forKey: key)
                     dispatch_group_leave(GTFSBundleDispatchGroup)
             })
@@ -134,8 +141,7 @@ class GTFSManager {
         
         dispatch_group_notify(GTFSBundleDispatchGroup, downloadQueue, {
             dispatch_async(dispatch_get_main_queue(), {
-                finished(true)
-                //to-do: testar se os arquivos foram baixados com sucesso
+                finished(!dirty, dlError)
             })
         })
         

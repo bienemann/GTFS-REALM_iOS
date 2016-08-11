@@ -19,9 +19,22 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        if GTFSManager.isDatabasePopulated(populate: true) == true {
+        if GTFSManager.isDatabasePopulated() == true {
             print("dtabase already up to date")
-        }else{ print("downloading files and populating database") }
+        }else{
+            print("downloading files and populating database")
+            GTFSManager.downloadAndParseDocuments({ (error) in
+                dispatch_async(dispatch_get_main_queue(), { 
+                    if error != nil {
+                        let gtfsManagerAlert = UIAlertController(title: "GTFS Manager Error",
+                            message: error?.description,
+                            preferredStyle: .Alert)
+                        gtfsManagerAlert.addAction(UIAlertAction(title: "OK", style: .Cancel, handler: nil))
+                        self.presentViewController(gtfsManagerAlert, animated: true, completion: nil)
+                    }
+                })
+            })
+        }
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {
