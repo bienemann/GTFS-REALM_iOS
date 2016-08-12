@@ -82,6 +82,7 @@ public class StreamReader
     let crDelim: UInt8 = 13		//	0x0D "\r"
     let lfDelim: UInt8 = 10		//	0x0A "\n"
     var crWasSeen = false
+    public var fileSize : UInt64 = 0
     
     init?(
         path: String,
@@ -103,7 +104,8 @@ public class StreamReader
             //self.fileHandle = NSFileHandle(forReadingAtPath: path)
             if self.fileHandle != nil
             {
-                
+                self.fileSize = (self.fileHandle?.seekToEndOfFile())!
+                self.fileHandle?.seekToFileOffset(0)
                 //	TODO: examine the first 1024 bytes or so to determine if this is a "text" file.
             }
             else

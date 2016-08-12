@@ -49,6 +49,7 @@ public class CSVParser: NSObject
     
     /// The current line number being processed in the CSV file
     public var lineCount = 0
+    public var csvStreamReader : StreamReader? = nil
     
     enum ParserState
     {
@@ -109,11 +110,12 @@ public class CSVParser: NSObject
         
         lineCount = 0
 
-        if startClosure != nil { startClosure!(self) }
-        
-        if let csvStreamReader = self.csvFile.reader(){
+        csvStreamReader = self.csvFile.reader()
+        if csvStreamReader != nil{
             
-            var line = csvStreamReader.nextLine()
+            if startClosure != nil { startClosure!(self) }
+            
+            var line = csvStreamReader!.nextLine()
             while line != nil{
                 autoreleasepool({ 
                     
@@ -125,7 +127,7 @@ public class CSVParser: NSObject
                     if self.indexed {
                         if lineCount == 1 {
                             self.header = parsedLine as! [String]
-                            line = csvStreamReader.nextLine()
+                            line = csvStreamReader!.nextLine()
                             return
                         }
                         if readLineClosure != nil { readLineClosure!(self, parsedLine) }
@@ -134,13 +136,13 @@ public class CSVParser: NSObject
                         if readLineClosure != nil { readLineClosure!(self, parsedLine) }
                     }
                     
-                    line = csvStreamReader.nextLine()
+                    line = csvStreamReader!.nextLine()
                     
                     if doAfterLine != nil { doAfterLine!(self, parsedLine) }
                 })
             }
             
-            csvStreamReader.close()
+            csvStreamReader!.close()
         }
 
         if endClosure != nil { endClosure!(self) }

@@ -13,22 +13,27 @@ import RealmSwift
 class GTFSParser : NSObject{
     
     var realm : Realm?
+    var progressClosure : (() -> Double)?
     
     #if DEBUG
     var startDate : NSDate?
     let debugClosure : (CSVParser, String, NSDate, NSDate)->Void = { (parser, filePath, start, end) in
         let pathComponents = filePath.componentsSeparatedByString("/")
         let fileName = pathComponents.last!
-        print("finished parsing \(fileName) file")
-        print("inserted \(parser.lineCount-1) objects in \(end.timeIntervalSinceDate(start)) seconds\n")
+//        print("finished parsing \(fileName) file")
+//        print("inserted \(parser.lineCount-1) objects in \(end.timeIntervalSinceDate(start)) seconds\n")
     }
     #endif
     
-    func parseDocument(filePath: String, processValues: (structure: Array<String>, line: Array<AnyObject>) -> GTFSBaseModel?){
+    func parseDocument(filePath: String,
+                       processValues: (structure: Array<String>, line: Array<AnyObject>) -> GTFSBaseModel?,
+                       progress: ((Double, Double)->Void)?){
         
+        var fileSize : UInt64 = 0
         let parser = CSVParser(path: filePath, structure: true,
                                
-                               didStartDocument: { _ -> Void in
+                               didStartDocument: { parser -> Void in
+                                fileSize = parser.csvStreamReader!.fileSize
                                 self.realm = try! Realm()
                                 self.realm!.beginWrite()
                                 #if DEBUG
@@ -39,8 +44,13 @@ class GTFSParser : NSObject{
                                didReadLine: { parser, values in
                                 let entry = processValues(structure: parser.header, line: values)
                                 self.realm!.add(entry!)
-                                
                                 if parser.lineCount % 10000 == 0 {
+                                
+                                    if progress != nil{
+                                        progress!(Double((parser.csvStreamReader?.fileHandle?.offsetInFile)!/10),
+                                            Double(fileSize/10))
+                                    }
+                                    
                                     try! self.realm!.commitWrite()
                                     self.realm!.beginWrite()
                                 }},
@@ -50,10 +60,14 @@ class GTFSParser : NSObject{
                                 #if DEBUG
                                 self.debugClosure(parser, filePath, self.startDate!, NSDate())
                                 #endif
-                                }
+                                if progress != nil{
+                                    progress!(Double(fileSize/10), Double(fileSize/10))
+                                }}
         )
         
-        parser.startReader()
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), {
+            parser.startReader()
+        })
     }
     
     func parseLine<T:GTFSBaseModel>(structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{

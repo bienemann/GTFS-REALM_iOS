@@ -36,7 +36,7 @@ class GTFSManager {
         
     }
     
-    class func downloadAndParseDocuments(error: NSError? -> Void) {
+    class func downloadAndParseDocuments(error: NSError? -> Void, reportProgress: ((Double, Double)->Void)?) {
         
         GTFSManager.sharedInstance.downloadGTFS { (finished, err) in
             
@@ -45,6 +45,8 @@ class GTFSManager {
                 return
             }
             
+            var progressDict : Dictionary<String, Array<Double>> = [:]
+        
             print("Finished downloading GTFS files\nstarting parse\n")
             for (key, value) in GTFSManager.sharedInstance.fileNames {
                 autoreleasepool({
@@ -89,10 +91,25 @@ class GTFSManager {
                     default:
                         break
                     }
-                    print("parsing \(key)")
+                    
                     let parser = GTFSParser()
                     parser.parseDocument(value!, processValues: { (structure, line) -> GTFSBaseModel? in
                         return parser.parseLine(structure, line: line, model: classType)
+                        }, progress: { (progress, total) in
+                            progressDict.updateValue([progress, total], forKey: key)
+                            if progressDict.count == GTFSManager.sharedInstance.fileNames.count {
+                                if reportProgress != nil {
+                                    var totalProgress : Double = 0
+                                    var totalGoal : Double = 0
+                                    for v in progressDict.values {
+                                        totalProgress += v[0]
+                                        totalGoal += v[1]
+                                    }
+                                    reportProgress!(totalProgress, totalGoal)
+                                }
+                            }else{
+                                reportProgress!(Double(0), Double(0))
+                            }
                     })
                 })
             }
@@ -127,6 +144,9 @@ class GTFSManager {
             }
             
             Alamofire.download(.GET, "\(self.baseURL)/\(key).txt", destination: { (_, _) -> NSURL in
+                if NSFileManager.defaultManager().fileExistsAtPath(customPath.relativePath!) {
+                    try! NSFileManager.defaultManager().removeItemAtPath(customPath.relativePath!)
+                }
                 return customPath
             }).response(completionHandler: { (request, resonse, data, error) in
                 if error != nil {

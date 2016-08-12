@@ -19,7 +19,9 @@ class SPTransAPI : NSObject {
     func authenticate(result:(result: Bool) -> Void) {
         let requestURL = "\(baseURL)/Login/Autenticar?token=\(apiKey)"
         Alamofire.request(.POST, requestURL).responseJSON { response in
-            result(result: response.result.value as! Bool)
+            if response.result.isSuccess{
+                result(result: response.result.value as! Bool)
+            }else{ result(result: false) }
         }
     }
     

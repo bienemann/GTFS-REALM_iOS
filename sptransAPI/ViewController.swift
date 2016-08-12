@@ -33,6 +33,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                         self.presentViewController(gtfsManagerAlert, animated: true, completion: nil)
                     }
                 })
+                }, reportProgress: { progress, total in
+                    let p = progress/total * 100
+                    if p.isNaN { print("parse progress: calculating") }
+                    else { print("parse progress: \(progress/total * 100)%") }
             })
         }
         
