@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import SVProgressHUD
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
@@ -31,12 +32,28 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                             preferredStyle: .Alert)
                         gtfsManagerAlert.addAction(UIAlertAction(title: "OK", style: .Cancel, handler: nil))
                         self.presentViewController(gtfsManagerAlert, animated: true, completion: nil)
+                    }else{
+                        // tela de progresso
+                        SVProgressHUD.showProgress(-1, status: "Calculando arquvos")
+                        SVProgressHUD.setDefaultMaskType(.Black)
+                        SVProgressHUD.setDefaultStyle(.Dark)
                     }
                 })
                 }, reportProgress: { progress, total in
-                    let p = progress/total * 100
-                    if p.isNaN { print("parse progress: calculating") }
-                    else { print("parse progress: \(progress/total * 100)%") }
+                    let p = Float(progress/total)
+                    dispatch_async(dispatch_get_main_queue(), {
+                        if p.isNaN {
+                            SVProgressHUD.showProgress(-1, status: "Calculando arquvos...")
+                            SVProgressHUD.setDefaultMaskType(.Black)
+                            SVProgressHUD.setDefaultStyle(.Dark)
+                        }
+                        else if p >= 1 { SVProgressHUD.dismiss() }
+                        else {
+                            SVProgressHUD.showProgress(p, status: "Processando; \(Int(p*100))%")
+                            SVProgressHUD.setDefaultMaskType(.Black)
+                            SVProgressHUD.setDefaultStyle(.Dark)
+                        }
+                    })
             })
         }
         
