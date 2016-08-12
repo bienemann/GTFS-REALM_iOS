@@ -10,13 +10,14 @@ import Foundation
 import UIKit
 import SVProgressHUD
 import Dispatch
+import RealmSwift
 
 class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
     
     @IBOutlet weak var tableView : UITableView?
     @IBOutlet weak var searchBar : UISearchBar?
     
-    var searchDataSource : Array<LineModel> = Array()
+    var searchDataSource : Array<GTFSTrip> = Array()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,8 +36,8 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("line_cell", forIndexPath: indexPath)
         let line = self.searchDataSource[indexPath.row]
-        cell.textLabel?.text = line.currentName()
-        cell.detailTextLabel?.text = "\(line.lineIDNumber)-\(line.lineIDType)"
+        cell.textLabel?.text = line.trip_headsign!
+        cell.detailTextLabel?.text = line.route_id
         return cell
     }
     
@@ -46,17 +47,32 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
         searchBar.resignFirstResponder()
         SVProgressHUD.showWithStatus("buscando linhas")
         
-        SPTransAPI.shared.buscarLinha(searchBar.text!) { (result) in
-            if result != nil{
-                self.searchDataSource.removeAll()
-                self.searchDataSource.appendContentsOf(result!)
-            }
-            
-            dispatch_async(dispatch_get_main_queue(), {
-                self.tableView?.reloadData()
-                SVProgressHUD.dismiss()
-            })
-            
+        let realm = try! Realm()
+        
+        let query1 = NSComparisonPredicate(leftExpression: NSExpression(forKeyPath: "route_id"),
+                                          rightExpression: NSExpression(format: "%@", searchBar.text!),
+                                          modifier: .DirectPredicateModifier,
+                                          type: .ContainsPredicateOperatorType,
+                                          options: .CaseInsensitivePredicateOption)
+        let query2 = NSComparisonPredicate(leftExpression: NSExpression(forKeyPath: "trip_headsign"),
+                                           rightExpression: NSExpression(format: "%@", searchBar.text!),
+                                           modifier: .DirectPredicateModifier,
+                                           type: .ContainsPredicateOperatorType,
+                                           options: .CaseInsensitivePredicateOption)
+        let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: [query1, query2])
+        let trips = realm.objects(GTFSTrip.self).filter(compoundQuery)
+        self.searchDataSource.removeAll()
+        if trips.count > 0 {
+            print(trips)
+            self.searchDataSource.appendContentsOf(trips)
+        }else {
+            //tratar sem resultados
         }
+        
+        dispatch_async(dispatch_get_main_queue(), {
+            self.tableView?.reloadData()
+            SVProgressHUD.dismiss()
+        })
+        
     }
 }

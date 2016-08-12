@@ -93,9 +93,11 @@ class GTFSManager {
                     }
                     
                     let parser = GTFSParser()
-                    parser.parseDocument(value!, processValues: { (structure, line) -> GTFSBaseModel? in
-                        return parser.parseLine(structure, line: line, model: classType)
-                        }, progress: { (progress, total) in
+                    parser.parseDocument(value!,
+                        processValues: { (structure, line) -> GTFSBaseModel? in
+                            return parser.parseLine(structure, line: line, model: classType)
+                        },
+                        progress: { (progress, total) in
                             progressDict.updateValue([progress, total], forKey: key)
                             if progressDict.count == GTFSManager.sharedInstance.fileNames.count {
                                 if reportProgress != nil {
