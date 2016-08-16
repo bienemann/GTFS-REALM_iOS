@@ -20,7 +20,6 @@ class TestMapViewController: UIViewController, MKMapViewDelegate {
     
     func plotLine(line: GTFSTripPolyline){
         let renderer = MKPolylineRenderer(polyline: line)
-        MKPolylineView
         self.mapView?.addOverlay(renderer.overlay)
         self.mapView?.regionThatFits(MKCoordinateRegion(
             center: line.coordinate, span: MKCoordinateSpan(latitudeDelta: 90, longitudeDelta: 90)))
