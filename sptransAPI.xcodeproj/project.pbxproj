@@ -10,6 +10,8 @@
 		0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */; };
 		03E927DF1D519BB800BBAF06 /* GTFSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E927DE1D519BB800BBAF06 /* GTFSManager.swift */; };
 		1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D27F17C1D4F96EA00F896FA /* LineModel.swift */; };
+		1D3E1ABB1D5E60E20035F841 /* GTFSTripPolyline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3E1ABA1D5E60E20035F841 /* GTFSTripPolyline.swift */; };
+		1D3E1ABD1D5E61880035F841 /* GTFSQueryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3E1ABC1D5E61880035F841 /* GTFSQueryManager.swift */; };
 		1D7C20891D4FDFFC003CC408 /* GTFSAgency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */; };
 		1D7C208B1D4FE238003CC408 /* GTFSRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208A1D4FE238003CC408 /* GTFSRoute.swift */; };
 		1D7C208D1D4FEA24003CC408 /* GTFSFareRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C208C1D4FEA24003CC408 /* GTFSFareRule.swift */; };
@@ -64,6 +66,8 @@
 		051D3E7E326A99E311B266A9 /* Pods-sptransAPITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sptransAPITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-sptransAPITests/Pods-sptransAPITests.release.xcconfig"; sourceTree = "<group>"; };
 		07C98A541936A04998FE8F86 /* Pods-sptransAPI.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sptransAPI.debug.xcconfig"; path = "Pods/Target Support Files/Pods-sptransAPI/Pods-sptransAPI.debug.xcconfig"; sourceTree = "<group>"; };
 		1D27F17C1D4F96EA00F896FA /* LineModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineModel.swift; sourceTree = "<group>"; };
+		1D3E1ABA1D5E60E20035F841 /* GTFSTripPolyline.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSTripPolyline.swift; sourceTree = "<group>"; };
+		1D3E1ABC1D5E61880035F841 /* GTFSQueryManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSQueryManager.swift; sourceTree = "<group>"; };
 		1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSAgency.swift; sourceTree = "<group>"; };
 		1D7C208A1D4FE238003CC408 /* GTFSRoute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSRoute.swift; sourceTree = "<group>"; };
 		1D7C208C1D4FEA24003CC408 /* GTFSFareRule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSFareRule.swift; sourceTree = "<group>"; };
@@ -179,6 +183,8 @@
 				1D7D94EC1D4BF4A100CEBB4A /* SPTransAPI.swift */,
 				1DEAD3CC1D51142A006560F3 /* GTFSParser.swift */,
 				03E927DE1D519BB800BBAF06 /* GTFSManager.swift */,
+				1D3E1ABC1D5E61880035F841 /* GTFSQueryManager.swift */,
+				1D3E1ABA1D5E60E20035F841 /* GTFSTripPolyline.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -568,10 +574,12 @@
 				1D7C208B1D4FE238003CC408 /* GTFSRoute.swift in Sources */,
 				1DEAD3C31D510D63006560F3 /* GTFSCalendarDates.swift in Sources */,
 				1DEAD3CB1D5111D4006560F3 /* GTFSTransfer.swift in Sources */,
+				1D3E1ABB1D5E60E20035F841 /* GTFSTripPolyline.swift in Sources */,
 				1DEAD3BD1D5109EC006560F3 /* GTFSTrip.swift in Sources */,
 				1DEAD3C51D510E2A006560F3 /* GTFSShape.swift in Sources */,
 				1D7D94ED1D4BF4A100CEBB4A /* SPTransAPI.swift in Sources */,
 				1DA07F981D5CEDDF00980EA4 /* TestMapViewController.swift in Sources */,
+				1D3E1ABD1D5E61880035F841 /* GTFSQueryManager.swift in Sources */,
 				1D7C208F1D4FEAE4003CC408 /* GTFSFareAttribute.swift in Sources */,
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
 				1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */,

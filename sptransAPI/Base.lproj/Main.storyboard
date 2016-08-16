@@ -139,6 +139,7 @@
                     <connections>
                         <outlet property="searchBar" destination="QYK-b3-MLa" id="9jy-3z-1gg"/>
                         <outlet property="tableView" destination="ImD-sl-K30" id="lkT-0o-v8P"/>
+                        <segue destination="hDr-Vh-ZAy" kind="show" identifier="test_route" id="YRO-6x-Vhu"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8a3-88-Mrb" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -181,4 +182,7 @@
             <point key="canvasLocation" x="604" y="803"/>
         </scene>
     </scenes>
+    <inferredMetricsTieBreakers>
+        <segue reference="YRO-6x-Vhu"/>
+    </inferredMetricsTieBreakers>
 </document>

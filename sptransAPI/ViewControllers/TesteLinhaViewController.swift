@@ -41,26 +41,28 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
         return cell
     }
     
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        self.performSegueWithIdentifier("test_route", sender: tableView.cellForRowAtIndexPath(indexPath))
+    }
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if segue.identifier == "test_route" {
+            let vc = segue.destinationViewController as! TestMapViewController
+            
+            let selectedIndex = self.tableView?.indexPathForCell(sender as! UITableViewCell)
+            let trip = self.searchDataSource[selectedIndex!.row]
+            vc.line = GTFSTripPolyline(trip: trip)
+        }
+    }
+    
     //SearchBar Delegte
     
     func searchBarSearchButtonClicked(searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
         SVProgressHUD.showWithStatus("buscando linhas")
         
-        let realm = try! Realm()
+        let trips = GTFSQueryManager.selectTripsContaining(searchBar.text!)
         
-        let query1 = NSComparisonPredicate(leftExpression: NSExpression(forKeyPath: "route_id"),
-                                          rightExpression: NSExpression(format: "%@", searchBar.text!),
-                                          modifier: .DirectPredicateModifier,
-                                          type: .ContainsPredicateOperatorType,
-                                          options: .CaseInsensitivePredicateOption)
-        let query2 = NSComparisonPredicate(leftExpression: NSExpression(forKeyPath: "trip_headsign"),
-                                           rightExpression: NSExpression(format: "%@", searchBar.text!),
-                                           modifier: .DirectPredicateModifier,
-                                           type: .ContainsPredicateOperatorType,
-                                           options: .CaseInsensitivePredicateOption)
-        let compoundQuery = NSCompoundPredicate(orPredicateWithSubpredicates: [query1, query2])
-        let trips = realm.objects(GTFSTrip.self).filter(compoundQuery)
         self.searchDataSource.removeAll()
         if trips.count > 0 {
             print(trips)
