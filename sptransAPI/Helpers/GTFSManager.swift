@@ -93,25 +93,33 @@ class GTFSManager {
                     }
                     
                     let parser = GTFSParser()
-                    parser.parseDocument(value!,
-                        processValues: { (structure, line) -> GTFSBaseModel? in
-                            return parser.parseLine(structure, line: line, model: classType)
-                        },
-                        progress: { (progress, total) in
-                            progressDict.updateValue([progress, total], forKey: key)
-                            if progressDict.count == GTFSManager.sharedInstance.fileNames.count {
-                                if reportProgress != nil {
-                                    var totalProgress : Double = 0
-                                    var totalGoal : Double = 0
-                                    for v in progressDict.values {
-                                        totalProgress += v[0]
-                                        totalGoal += v[1]
+                    
+                    let queue = dispatch_queue_create(key, DISPATCH_QUEUE_CONCURRENT)
+                    dispatch_async(queue, { 
+                        parser.parseDocument(value!,
+                            processValues: { (structure, line) -> GTFSBaseModel? in
+                                return parser.parseLine(structure, line: line, model: classType)
+                            },
+                            progress: { (progress, total) in
+                                progressDict.updateValue([progress, total], forKey: key)
+                                if progressDict.count == GTFSManager.sharedInstance.fileNames.count {
+                                    if reportProgress != nil {
+                                        var totalProgress : Double = 0
+                                        var totalGoal : Double = 0
+                                        for v in progressDict.values {
+                                            totalProgress += v[0]
+                                            totalGoal += v[1]
+                                        }
+                                        dispatch_async(dispatch_get_main_queue(), { 
+                                            reportProgress!(totalProgress, totalGoal)
+                                        })
                                     }
-                                    reportProgress!(totalProgress, totalGoal)
+                                }else{
+                                    dispatch_async(dispatch_get_main_queue(), {
+                                        reportProgress!(Double(0), Double(0))
+                                    })
                                 }
-                            }else{
-                                reportProgress!(Double(0), Double(0))
-                            }
+                        })
                     })
                 })
             }

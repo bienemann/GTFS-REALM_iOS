@@ -65,9 +65,7 @@ class GTFSParser : NSObject{
                                 }}
         )
         
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), {
-            parser.startReader()
-        })
+        parser.startReader()
     }
     
     func parseLine<T:GTFSBaseModel>(structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{
