@@ -26,7 +26,7 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
     //Table View Delegate
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.searchDataSource.count
+        return self.searchDataSource.count > 0 ? self.searchDataSource.count + 1 : 0
     }
     
     func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
@@ -35,9 +35,16 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("line_cell", forIndexPath: indexPath)
-        let line = self.searchDataSource[indexPath.row]
-        cell.textLabel?.text = line.trip_headsign!
-        cell.detailTextLabel?.text = line.route_id
+        
+        if indexPath.row < self.searchDataSource.count {
+            let line = self.searchDataSource[indexPath.row]
+            cell.textLabel?.text = line.trip_headsign!
+            cell.detailTextLabel?.text = line.route_id
+        }else{
+            cell.textLabel?.text = "ver todas no mapa"
+            cell.detailTextLabel?.text = ""
+        }
+        
         return cell
     }
     
@@ -50,8 +57,16 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
             let vc = segue.destinationViewController as! TestMapViewController
             
             let selectedIndex = self.tableView?.indexPathForCell(sender as! UITableViewCell)
-            let trip = self.searchDataSource[selectedIndex!.row]
-            vc.line = GTFSTripPolyline(trip: trip)
+            
+            
+            if selectedIndex?.row == self.searchDataSource.count {
+                for trip in self.searchDataSource{
+                    vc.lines.append(GTFSTripPolyline(trip: trip))
+                }
+            }else{
+                let trip = self.searchDataSource[selectedIndex!.row]
+                vc.lines.append(GTFSTripPolyline(trip: trip))
+            }   
         }
     }
     

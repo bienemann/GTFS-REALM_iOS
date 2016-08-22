@@ -12,6 +12,12 @@ import MapKit
 
 class GTFSTripPolyline: MKPolyline {
     
+    var renderer : MKPolylineRenderer = MKPolylineRenderer()
+    
+    override init() {
+        super.init()
+    }
+    
     convenience init(trip: GTFSTrip) {
         
         let shapes = GTFSQueryManager.shapesForTrip(trip)
@@ -27,6 +33,16 @@ class GTFSTripPolyline: MKPolyline {
         self.init()
         self.init(coordinates: UnsafeMutablePointer(coordinates), count: coordinates.count)
         
+        self.renderer = self.customLineRenderer(self)
+        
+    }
+    
+    func customLineRenderer(line: GTFSTripPolyline) -> MKPolylineRenderer{
+        let renderer = MKPolylineRenderer(polyline: line)
+        renderer.strokeColor = UIColor(red: 0.23, green: 0.36, blue: 0.75, alpha: 0.5)
+        renderer.lineWidth = 3
+        renderer.lineCap = CGLineCap.Square
+        return renderer
     }
     
 }
