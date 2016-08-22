@@ -9,47 +9,43 @@
 import Foundation
 import MapKit
 
-class TestMapViewController: UIViewController, MKMapViewDelegate {
+class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate {
     
     @IBOutlet weak var mapView : MKMapView?
     var lines = Array<GTFSTripPolyline>()
+    let locationManager = CLLocationManager()
+    
+    override func viewDidLoad() {
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingHeading()
+    }
+    
+    override func viewWillDisappear(animated: Bool) {
+        locationManager.stopUpdatingLocation()
+    }
     
     override func viewDidAppear(animated: Bool) {
         
         for line in lines {
             self.mapView!.addOverlay(line.renderer.overlay)
+            self.mapView!.addAnnotation(line.lastPointAnnotation)
+            self.mapView!.addAnnotation(line.firstPointAnnotation)
         }
         
-        self.mapView!.setVisibleMapRect(self.mapRectWithBorder(), animated: true)
+        let mapRectForLines = GTFSTripPolyline.mapRectForLinesList(lines, borderPercentage: 10)
+        self.mapView!.setVisibleMapRect(mapRectForLines, animated: true)
+        self.mapView!.showsUserLocation = true
     }
     
-    func mapRectWithBorder() -> MKMapRect{
-        
-        var mapRect = MKMapRect()
-        if lines.count == 1 {
-            mapRect = lines.first!.renderer.overlay.boundingMapRect
-        }else{
-            for (index, _) in lines.enumerate() {
-                if index+1 == lines.count {
-                    continue
-                }
-                
-                if index == 0 {
-                    mapRect = lines[index].renderer.overlay.boundingMapRect
-                }
-                
-                mapRect = MKMapRectUnion(mapRect, lines[index+1].renderer.overlay.boundingMapRect)
-            }
-        }
-        return MKMapRectMake(mapRect.origin.x - mapRect.size.width/20,
-                             mapRect.origin.y - mapRect.size.height/20,
-                             mapRect.size.width + mapRect.size.width/10,
-                             mapRect.size.height + mapRect.size.height/10)
-    }
+    //MARK: - MKMapView Delegate
     
-    //MKMapView Delegate
+    func mapView(mapView: MKMapView, didUpdateUserLocation userLocation: MKUserLocation) {
+        // TOOD: tratar
+    }
     
     func mapView(mapView: MKMapView, rendererForOverlay overlay: MKOverlay) -> MKOverlayRenderer {
+        
         for line in lines {
             if overlay.isEqual(line.renderer.overlay){
                 return line.renderer
@@ -59,4 +55,29 @@ class TestMapViewController: UIViewController, MKMapViewDelegate {
         return MKOverlayRenderer()
     }
     
+    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+        
+        if annotation.isKindOfClass(MKUserLocation.self){
+            return nil
+        }
+        if annotation.isKindOfClass(StartingPointAnnotation.self) {
+            return StartingPointAnnotationView(annotation: annotation)
+        }
+        if annotation.isKindOfClass(EndPointAnnotation.self){
+            return EndPointAnnotationView(annotation: annotation)
+        }
+        
+        return MKAnnotationView()
+    }
+    
+    // MARK: - Location Manager Delegate
+    
+    func locationManager(manager: CLLocationManager, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
+        // TOOD: tratar
+    }
+    
+    func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        // TOOD: tratar
+    }
+
 }
