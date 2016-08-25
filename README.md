@@ -4,7 +4,7 @@ Projeto pessoal para testar e entender a API olhovivo da SPTrans e sua GTFS
 Roadmap:
 - Criar wrapper para GTFS usando Realm ✓
 - Criar scripts para popular o banco com GTFS da SPTrans ✓
-- Abstrair plotagem de rotas a partir do GTFS
+- Abstrair plotagem de rotas a partir do GTFS ✓
 - Buscar pontos e plotar linhas próximas usando geolocalização
 - Buscar pontos próximos usando geocoding reverso
 - Buscar melhor linha entre ponto A e B
