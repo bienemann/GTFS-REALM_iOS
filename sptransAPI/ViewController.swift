@@ -14,7 +14,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     @IBOutlet weak var tableView : UITableView!
 
-    let tableViewEntries : [String] = ["buscar linha", "teste mapa"]
+    let tableViewEntries : [String] = ["buscar linha", "teste mapa", "linhas que passam aqui"]
     
     override func viewDidLoad() {
         super.viewDidLoad()

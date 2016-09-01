@@ -18,7 +18,7 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     override func viewDidLoad() {
         locationManager.delegate = self
         locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingHeading()
+        locationManager.startUpdatingLocation()
     }
     
     override func viewWillDisappear(animated: Bool) {
@@ -42,6 +42,28 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     
     func mapView(mapView: MKMapView, didUpdateUserLocation userLocation: MKUserLocation) {
         // TOOD: tratar
+        if self.lines.count < 1 {
+            let l = GTFSQueryManager.linesNearPoint(self.mapView!.userLocation.location!, distance: 1000.0)
+            var a = Array<GTFSTripPolyline>()
+            for t in l {
+                a.append(GTFSTripPolyline(trip: t))
+            }
+            self.lines = a
+            
+            for line in lines {
+                self.mapView!.addOverlay(line.renderer.overlay)
+                self.mapView!.addAnnotation(line.lastPointAnnotation)
+                self.mapView!.addAnnotation(line.firstPointAnnotation)
+            }
+            
+            let mapRectForLines = GTFSTripPolyline.mapRectForLinesList(lines, borderPercentage: 10)
+            self.mapView!.setVisibleMapRect(mapRectForLines, animated: true)
+        }
+        
+    }
+    
+    func mapView(mapView: MKMapView, didFailToLocateUserWithError error: NSError) {
+        //tratar
     }
     
     func mapView(mapView: MKMapView, rendererForOverlay overlay: MKOverlay) -> MKOverlayRenderer {
@@ -73,11 +95,16 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     // MARK: - Location Manager Delegate
     
     func locationManager(manager: CLLocationManager, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
-        // TOOD: tratar
+        // TODO: tratar
     }
     
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // TOOD: tratar
+        // TODO: tratar
     }
+    
 
+    func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
+        //TODO: tratar
+    }
+    
 }
