@@ -27,6 +27,14 @@ class GTFSQueryManager {
             .sorted("shape_pt_sequence", ascending: true)
     }
     
+    class func stopsInsideArea(center: CLLocation, radius: Double) -> Results<GTFSStop> {
+        let (maxLat, minLat, maxLon, minLon) = center.boundingBoxForRadius(Float(radius))
+        let realm = try! Realm()
+        return realm.objects(GTFSStop.self)
+            .filter("stop_lat BETWEEN {%f, %f} AND stop_lon BETWEEN {%f, %f}",
+                    minLat, maxLat, minLon, maxLon)
+    }
+    
     class func tripsPassingNear(point: CLLocation, distance: Double) -> Results<GTFSTrip>{ //distance in meters
         let start = NSDate()
         print("start")
@@ -39,6 +47,18 @@ class GTFSQueryManager {
         let (maxLat, minLat, maxLon, minLon) = point.boundingBoxForRadius(Float(distance * 2.5))
         var finalSet = Set<Int>()
         
+        //  *********** EXPERIMENT ***********
+        
+        GTFSQueryManager.stopsInsideArea(point, radius: distance)
+            .tripsForStops().forEach { (trip) in
+            guard let shapeID = trip.shape_id.value else {
+                return
+            }
+            finalSet.insert(shapeID)
+        }
+        
+        //  **********************************
+        
         //Queries for points inside the bounding box, sorted in a way that groups trips
         //and organizes shapes by their route order
         let realm = try! Realm()
@@ -47,7 +67,7 @@ class GTFSQueryManager {
                 minLat, maxLat, minLon, maxLon)
             .sorted("shape_pt_sequence", ascending: true)
             .sorted("shape_id")
-        
+
         //Further filtering the returned shapes, testing if the lines they form intersect
         //with the radius we defined.
         for (index, shape) in shapes.enumerate() {

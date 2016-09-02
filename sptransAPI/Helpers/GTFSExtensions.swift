@@ -9,6 +9,8 @@
 import Foundation
 import CoreLocation
 import GLKit
+import RealmSwift
+import Realm
 
 extension CLLocation {
     
@@ -74,5 +76,17 @@ extension CLLocation {
      */
     public func shortestDistanceToPath(path:(CLLocationCoordinate2D, CLLocationCoordinate2D)) -> CLLocationDistance{
         return self.distanceFromLocation(self.closestLocationInPath(path))
+    }
+}
+
+extension Results where T:GTFSStop {
+    func tripsForStops() -> Results<GTFSTrip>{
+        let realm = try! Realm()
+        let stopTimes = realm.objects(GTFSStopTime.self).filter("stop_id IN %@", self.valueForKey("stop_id")!)
+        var IDTrips = Set<String>()
+        for st in stopTimes {
+            IDTrips.insert(st.trip_id)
+        }
+        return realm.objects(GTFSTrip.self).filter("trip_id IN %@", IDTrips)
     }
 }
