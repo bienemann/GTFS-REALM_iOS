@@ -43,7 +43,7 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     func mapView(mapView: MKMapView, didUpdateUserLocation userLocation: MKUserLocation) {
         // TOOD: tratar
         if self.lines.count < 1 {
-            let l = GTFSQueryManager.linesNearPoint(self.mapView!.userLocation.location!, distance: 1000.0)
+            let l = GTFSQueryManager.tripsPassingNear(self.mapView!.userLocation.location!, distance: 1000.0)
             var a = Array<GTFSTripPolyline>()
             for t in l {
                 a.append(GTFSTripPolyline(trip: t))

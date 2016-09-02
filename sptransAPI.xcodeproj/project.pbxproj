@@ -38,6 +38,7 @@
 		1DEAD3C91D5110AE006560F3 /* GTFSStop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3C81D5110AE006560F3 /* GTFSStop.swift */; };
 		1DEAD3CB1D5111D4006560F3 /* GTFSTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3CA1D5111D4006560F3 /* GTFSTransfer.swift */; };
 		1DEAD3CD1D51142A006560F3 /* GTFSParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3CC1D51142A006560F3 /* GTFSParser.swift */; };
+		1DFB3AED1D79C51E00A7E659 /* GTFSExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DFB3AEC1D79C51E00A7E659 /* GTFSExtensions.swift */; };
 		232FF1CE4F51EF152778AF1A /* Pods_sptransAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F1E26BD1026A200EC2478105 /* Pods_sptransAPI.framework */; };
 		47F1DACBDC7DE5579D297BC4 /* Pods_sptransAPITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E7101FFA5F7508E56CC4AE4 /* Pods_sptransAPITests.framework */; };
 		7D5A8FCAC2993EF6795F2813 /* Pods_sptransAPIUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5371BA4E41738AEFFA5310B5 /* Pods_sptransAPIUITests.framework */; };
@@ -100,6 +101,7 @@
 		1DEAD3C81D5110AE006560F3 /* GTFSStop.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSStop.swift; sourceTree = "<group>"; };
 		1DEAD3CA1D5111D4006560F3 /* GTFSTransfer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSTransfer.swift; sourceTree = "<group>"; };
 		1DEAD3CC1D51142A006560F3 /* GTFSParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSParser.swift; sourceTree = "<group>"; };
+		1DFB3AEC1D79C51E00A7E659 /* GTFSExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSExtensions.swift; sourceTree = "<group>"; };
 		5371BA4E41738AEFFA5310B5 /* Pods_sptransAPIUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sptransAPIUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B52F1DABD086E3042AB46FF /* Pods-sptransAPIUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sptransAPIUITests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-sptransAPIUITests/Pods-sptransAPIUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		8E7101FFA5F7508E56CC4AE4 /* Pods_sptransAPITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sptransAPITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -185,6 +187,7 @@
 				03E927DE1D519BB800BBAF06 /* GTFSManager.swift */,
 				1D3E1ABC1D5E61880035F841 /* GTFSQueryManager.swift */,
 				1D3E1ABA1D5E60E20035F841 /* GTFSMapUtilities.swift */,
+				1DFB3AEC1D79C51E00A7E659 /* GTFSExtensions.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -584,6 +587,7 @@
 				1DC24C0F1D4BD8A300ADF874 /* AppDelegate.swift in Sources */,
 				1D27F17D1D4F96EA00F896FA /* LineModel.swift in Sources */,
 				03E927DF1D519BB800BBAF06 /* GTFSManager.swift in Sources */,
+				1DFB3AED1D79C51E00A7E659 /* GTFSExtensions.swift in Sources */,
 				1D7C208D1D4FEA24003CC408 /* GTFSFareRule.swift in Sources */,
 				1DEAD3C11D510CAE006560F3 /* GTFSCalendar.swift in Sources */,
 			);

@@ -9,7 +9,6 @@
 import Foundation
 import RealmSwift
 import CoreLocation
-import GLKit
 import MapKit
 
 class GTFSQueryManager {
@@ -28,92 +27,55 @@ class GTFSQueryManager {
             .sorted("shape_pt_sequence", ascending: true)
     }
     
-    /**
-     Returns a tuple containing the bounding coordinates for the area provided.
-     - parameter center: The center point of the desired bounds.
-     - parameter distance: The radius (in meters) from the center.
-     - parameter multiplier: Multiplies the radius value. Default is 1.
-     - returns: A tuple containing the four points that make the bounding box that contains the wole area defined.
-     */
-    class func boundingBoxForArea(center: CLLocation, distance: Double, multiplier: Int = 1) -> (Float, Float, Float, Float){
+    class func tripsPassingNear(point: CLLocation, distance: Double) -> Results<GTFSTrip>{ //distance in meters
+        let start = NSDate()
+        print("start")
+        // Defines a bounding box surrounding the detection radius to "pre-filter"
+        // which shapes will be tested.
+        //*** IMPORTANT: we multiply the distance by 2.5 arbitrarily to TRY to avoid a situation
+        //where a path exists that intersects with our area but is not detected because
+        //its starting and ending point falls outside of our radius.
+        // *** NEEDS A ~SMARTER~ SOLUTION ***
+        let (maxLat, minLat, maxLon, minLon) = point.boundingBoxForRadius(Float(distance * 2.5))
+        var finalSet = Set<Int>()
         
-        let R : Float = 6371000.0
-        let largerDistance = Float(distance) * Float(multiplier)
-        let distanceByRDeg = Double(GLKMathRadiansToDegrees(largerDistance/R))
-        let arcSinOfDBR = asin(largerDistance/R)
-        
-        let radCosLat = cos(GLKMathDegreesToRadians(Float(center.coordinate.latitude)))
-        let radCosLon = cos(GLKMathDegreesToRadians(Float(center.coordinate.longitude)))
-        
-        let maxLat = center.coordinate.latitude + distanceByRDeg
-        let minLat = center.coordinate.latitude - distanceByRDeg
-        let maxLon = Float(center.coordinate.longitude) + GLKMathRadiansToDegrees(arcSinOfDBR / radCosLat)
-        let minLon = Float(center.coordinate.longitude) - GLKMathRadiansToDegrees(arcSinOfDBR / radCosLon)
-        
-        return (Float(maxLat), Float(minLat), maxLon, minLon)
-    }
-    
-    class func closestLocationInSegment(line: (CLLocationCoordinate2D, CLLocationCoordinate2D), point: CLLocationCoordinate2D) -> CLLocation {
-        
-        let (A, B) = line
-        let dAP : (x: Double, y: Double) = (point.latitude - A.latitude, point.longitude - A.longitude)
-        let dAB : (x: Double, y: Double) = (B.latitude - A.latitude, B.longitude - A.longitude)
-        
-        let dot = dAP.x * dAB.x + dAP.y * dAB.y
-        let sqrLen = dAB.x * dAB.x + dAB.y * dAB.y
-        let param = dot / sqrLen
-        
-        var nearest : (x: Double, y: Double) = (0.0,0.0)
-        if (param < 0 || (A.longitude == B.latitude && A.longitude == B.longitude)) {
-            nearest.x = A.latitude
-            nearest.y = A.longitude
-        } else if (param > 1) {
-            nearest.x = B.latitude
-            nearest.y = B.longitude
-        } else {
-            nearest.x = A.latitude + param * dAB.x;
-            nearest.y = A.longitude + param * dAB.y;
-        }
-        
-        let nearestLocation = CLLocation(latitude: nearest.x, longitude: nearest.y)
-        return nearestLocation
-
-    }
-    
-    class func linesNearPoint(point: CLLocation, distance: Double) -> Results<GTFSTrip>{ //distance in meters
-        
-        let (maxLat, minLat, maxLon, minLon) = GTFSQueryManager.boundingBoxForArea(point, distance: distance)
-        
+        //Queries for points inside the bounding box, sorted in a way that groups trips
+        //and organizes shapes by their route order
         let realm = try! Realm()
-        let shapes = realm.objects(GTFSShape.self).filter("shape_pt_lat BETWEEN {%f, %f} AND shape_pt_lon BETWEEN {%f, %f}", Float(minLat), Float(maxLat), Float(minLon), Float(maxLon))
+        let shapes = realm.objects(GTFSShape.self)
+            .filter("shape_pt_lat BETWEEN {%f, %f} AND shape_pt_lon BETWEEN {%f, %f}",
+                minLat, maxLat, minLon, maxLon)
             .sorted("shape_pt_sequence", ascending: true)
             .sorted("shape_id")
         
-        var finalSet = Set<Int>()
-        
+        //Further filtering the returned shapes, testing if the lines they form intersect
+        //with the radius we defined.
         for (index, shape) in shapes.enumerate() {
-            if shape != shapes.last! {
+            
+            if shape != shapes.last! { //Prevents out of bounds exception
                 
+                //Skips this shape if it's from a different trip OR
+                //if the trip is already in range
                 if (shapes[index+1].shape_id != shape.shape_id) ||
                 finalSet.contains(shape.shape_id){
                     continue
                 }
                 
+                //Calculates if the shortest distance to this shape is
+                //inside the defined radius and saves it's trip ID
                 let a = CLLocationCoordinate2D(latitude: shape.shape_pt_lat,
                                                longitude: shape.shape_pt_lon)
                 let b = CLLocationCoordinate2D(latitude: shapes[index+1].shape_pt_lat,
                                                longitude: shapes[index+1].shape_pt_lon)
-                let closest = GTFSQueryManager.closestLocationInSegment((a, b), point: point.coordinate)
-                let d = closest.distanceFromLocation(point)
-                if d <= distance {
+                if point.shortestDistanceToPath((a, b)) <= distance {
                     finalSet.insert(shape.shape_id)
                 }
             }
         }
         
-        let lines = realm.objects(GTFSTrip.self).filter("shape_id IN %@", finalSet)
-        
-        return lines
+        let end = NSDate()
+        print(end.timeIntervalSinceDate(start))
+        return realm.objects(GTFSTrip.self).filter("shape_id IN %@", finalSet)
     }
     
 }
