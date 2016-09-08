@@ -13,6 +13,7 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     
     @IBOutlet weak var mapView : MKMapView?
     var lines = Array<GTFSTripPolyline>()
+    var circle = Circle()
     let locationManager = CLLocationManager()
     
     override func viewDidLoad() {
@@ -36,19 +37,23 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
         let mapRectForLines = GTFSTripPolyline.mapRectForLinesList(lines, borderPercentage: 10)
         self.mapView!.setVisibleMapRect(mapRectForLines, animated: true)
         self.mapView!.showsUserLocation = true
+        
+        self.showTripsOnMap()
     }
     
-    //MARK: - MKMapView Delegate
-    
-    func mapView(mapView: MKMapView, didUpdateUserLocation userLocation: MKUserLocation) {
-        // TOOD: tratar
+    func showTripsOnMap() {
         if self.lines.count < 1 {
-            let l = GTFSQueryManager.tripsPassingNear(self.mapView!.userLocation.location!, distance: 1000.0)
+            let testLoc = CLLocation(latitude: -23.439026, longitude: -46.806757)
+            let l = GTFSQuery.tripsPassingNear(testLoc, distance: 1000.0)
             var a = Array<GTFSTripPolyline>()
             for t in l {
                 a.append(GTFSTripPolyline(trip: t))
             }
             self.lines = a
+            
+            circle = Circle(centerCoordinate: testLoc.coordinate, radius: 1000.0)
+            circle.renderer = circle.customRenderer()
+            self.mapView!.addOverlay(circle.renderer!.overlay)
             
             for line in lines {
                 self.mapView!.addOverlay(line.renderer.overlay)
@@ -59,7 +64,13 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
             let mapRectForLines = GTFSTripPolyline.mapRectForLinesList(lines, borderPercentage: 10)
             self.mapView!.setVisibleMapRect(mapRectForLines, animated: true)
         }
-        
+    }
+    
+    //MARK: - MKMapView Delegate
+    
+    func mapView(mapView: MKMapView, didUpdateUserLocation userLocation: MKUserLocation) {
+        // TOOD: tratar
+        self.showTripsOnMap()
     }
     
     func mapView(mapView: MKMapView, didFailToLocateUserWithError error: NSError) {
@@ -72,6 +83,10 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
             if overlay.isEqual(line.renderer.overlay){
                 return line.renderer
             }
+        }
+        
+        if overlay.isEqual(circle.renderer!.overlay) {
+            return circle.renderer!
         }
         
         return MKOverlayRenderer()

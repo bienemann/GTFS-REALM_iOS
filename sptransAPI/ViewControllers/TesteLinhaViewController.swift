@@ -76,7 +76,7 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
         searchBar.resignFirstResponder()
         SVProgressHUD.showWithStatus("buscando linhas")
         
-        let trips = GTFSQueryManager.selectTripsContaining(searchBar.text!)
+        let trips = GTFSQuery.tripsContaining(searchBar.text!)
         
         self.searchDataSource.removeAll()
         if trips.count > 0 {

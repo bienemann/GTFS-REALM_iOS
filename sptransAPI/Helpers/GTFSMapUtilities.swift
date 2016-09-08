@@ -10,6 +10,19 @@
 import Foundation
 import MapKit
 
+class Circle : MKCircle {
+    
+    var renderer : MKCircleRenderer?
+    
+    func customRenderer() -> MKCircleRenderer{
+        let renderer = MKCircleRenderer(circle: self)
+        renderer.strokeColor = UIColor.greenColor()
+        renderer.fillColor = UIColor.greenColor().colorWithAlphaComponent(0.3)
+        return renderer
+    }
+    
+}
+
 // MARK: - Polyline
 
 class GTFSTripPolyline: MKPolyline {
@@ -24,7 +37,7 @@ class GTFSTripPolyline: MKPolyline {
     
     convenience init(trip: GTFSTrip) {
         
-        let shapes = GTFSQueryManager.shapesForTrip(trip)
+        let shapes = GTFSQuery.shapesForTrip(trip)
         var coordinates = Array<CLLocationCoordinate2D>()
         for shape in shapes {
             autoreleasepool({ 
