@@ -14,6 +14,7 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     @IBOutlet weak var mapView : MKMapView?
     var lines = Array<GTFSTripPolyline>()
     var circle = Circle()
+    var circle2 = Circle()
     let locationManager = CLLocationManager()
     
     override func viewDidLoad() {
@@ -43,17 +44,28 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     
     func showTripsOnMap() {
         if self.lines.count < 1 {
-            let testLoc = CLLocation(latitude: -23.439026, longitude: -46.806757)
-            let l = GTFSQuery.tripsPassingNear(testLoc, distance: 1000.0)
+            
+            //near start location: -23.649394,-46.750811
+            //near end location: -23.551160,-46.635454
+            
+//            let testLoc = CLLocation(latitude: -23.439026, longitude: -46.806757)
+//            let l = GTFSQuery.tripsPassingNear(testLoc, distance: 1000.0)
+            let p1 = CLLocation(latitude: -23.649394, longitude: -46.750811)
+            let p2 = CLLocation(latitude: -23.551160, longitude: -46.635454)
+            let l = GTFSQuery.tripsFromLocation(p1, toDestination: p2, walkingDistance: 200)
             var a = Array<GTFSTripPolyline>()
             for t in l {
                 a.append(GTFSTripPolyline(trip: t))
+                print("\(t.route_id) - \(t.trip_headsign!) : \((t.direction_id.value != nil) ? t.direction_id.value! : 99)")
             }
             self.lines = a
             
-            circle = Circle(centerCoordinate: testLoc.coordinate, radius: 1000.0)
+            circle = Circle(centerCoordinate: p1.coordinate, radius: 200.0)
             circle.renderer = circle.customRenderer()
+            circle2 = Circle(centerCoordinate: p2.coordinate, radius: 200.0)
+            circle2.renderer = circle2.customRenderer()
             self.mapView!.addOverlay(circle.renderer!.overlay)
+            self.mapView!.addOverlay(circle2.renderer!.overlay)
             
             for line in lines {
                 self.mapView!.addOverlay(line.renderer.overlay)
@@ -87,6 +99,9 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
         
         if overlay.isEqual(circle.renderer!.overlay) {
             return circle.renderer!
+        }
+        if overlay.isEqual(circle2.renderer!.overlay) {
+            return circle2.renderer!
         }
         
         return MKOverlayRenderer()

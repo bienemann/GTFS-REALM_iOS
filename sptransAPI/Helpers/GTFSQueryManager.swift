@@ -38,6 +38,12 @@ class GTFSQuery {
         return realm.objects(GTFSTrip.self).filter("shape_id IN %@", finalSet)
     }
     
+    class func tripsFromLocation(start: CLLocation, toDestination end: CLLocation, walkingDistance dist: Double) -> Results<GTFSTrip>{
+        return GTFSQuery.tripsPassingNear(start, distance: dist)
+            .filter("trip_id IN %@", GTFSQuery.tripsPassingNear(end, distance: dist).valueForKey("trip_id")!)
+        
+    }
+    
     //pragma - MARK: Shapes
     
     class func shapesForTrip(trip: GTFSTrip) -> Results<GTFSShape> {
