@@ -39,9 +39,10 @@ class GTFSQuery {
     }
     
     class func tripsFromLocation(start: CLLocation, toDestination end: CLLocation, walkingDistance dist: Double) -> Results<GTFSTrip>{
-        return GTFSQuery.tripsPassingNear(start, distance: dist)
+        let trips = GTFSQuery.tripsPassingNear(start, distance: dist)
             .filter("trip_id IN %@", GTFSQuery.tripsPassingNear(end, distance: dist).valueForKey("trip_id")!)
-        
+            .tripsByDirectionBasedOnLocations(start: start, end: end)
+        return trips
     }
     
     //pragma - MARK: Shapes
@@ -71,6 +72,44 @@ class GTFSQuery {
         }
         let finalResult = preFilter.filter("stop_id IN %@", finalFilter)
         return finalResult
+    }
+    
+    class func stopsForTrip(trip: GTFSTrip) -> Results<GTFSStop>{
+        let stopTimes = GTFSQuery.stopTimesForTrip(trip)
+        var stopsIDs = Set<Int>()
+        for st in stopTimes {
+            stopsIDs.insert(st.stop_id)
+        }
+        let realm = try! Realm()
+        return realm.objects(GTFSStop.self).filter("stop_id IN %@", stopsIDs)
+    }
+    
+    class func stopClosestToPoint(userLocation: CLLocation) -> GTFSStop {
+        let realm = try! Realm()
+        let stops = realm.objects(GTFSStop.self)
+        var shortestDistance = -1.0;
+        var closestStop = GTFSStop()
+        for stop in stops {
+            let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
+            let currentDistance = stopLocation.distanceFromLocation(userLocation)
+            if shortestDistance < 1 || currentDistance < shortestDistance {
+                shortestDistance = currentDistance
+                closestStop = stop
+            }
+        }
+        return closestStop
+    }
+    
+    //pragma - MARK: StopTimes
+    
+    class func stopTimesForTrip(trip:GTFSTrip, ordered:Bool = true) -> Results<GTFSStopTime> {
+        let realm = try! Realm()
+        let r = realm.objects(GTFSStopTime.self).filter("trip_id == %@", trip.trip_id)
+        if ordered {
+            return r.sorted("stop_sequence", ascending: true)
+        }else{
+            return r
+        }
     }
     
     //pragma - MARK: Legacy reference

@@ -79,7 +79,15 @@ extension CLLocation {
     }
 }
 
+extension GTFSStop {
+    func distanceToLocation(location: CLLocation) -> Double {
+        let stopLocation = CLLocation(latitude: self.stop_lat, longitude: self.stop_lon)
+        return stopLocation.distanceFromLocation(location)
+    }
+}
+
 extension Results where T:GTFSStop {
+    
     func tripsForStops() -> Results<GTFSTrip>{
         let realm = try! Realm()
         let stopTimes = realm.objects(GTFSStopTime.self).filter("stop_id IN %@", self.valueForKey("stop_id")!)
@@ -89,4 +97,59 @@ extension Results where T:GTFSStop {
         }
         return realm.objects(GTFSTrip.self).filter("trip_id IN %@", IDTrips)
     }
+    
+    func closestStopFromLocation(location : CLLocation) -> GTFSStop {
+        var shortestDistance = -1.0;
+        var closestStop = GTFSStop()
+        for stop in self {
+            let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
+            let currentDistance = stopLocation.distanceFromLocation(location)
+            if shortestDistance < 1 || currentDistance < shortestDistance {
+                shortestDistance = currentDistance
+                closestStop = stop
+            }
+        }
+        return closestStop
+    }
+}
+
+extension Results where T:GTFSTrip {
+    
+    func tripsByDirectionBasedOnLocations(start start:CLLocation, end:CLLocation)
+        -> Results<T>{
+            let realm = try! Realm()
+            let stopTimes = realm.objects(GTFSStopTime.self).filter("trip_id IN %@", self.valueForKey("trip_id")!)
+            let stops = realm.objects(GTFSStop.self).filter("stop_id IN %@", stopTimes.valueForKey("stop_id")!)
+            var tripsToReturn = Set<String>()
+            for trip in self {
+                let stopTimesForTrip = stopTimes.filter("trip_id == %@", trip.trip_id)
+                let stopsForTrip = stops.filter("stop_id IN %@", stopTimesForTrip.valueForKey("stop_id")!)
+                let closestToStart = stopsForTrip.closestStopFromLocation(start)
+                let closestToFinish = stopsForTrip.closestStopFromLocation(end)
+                let startSeq = stopTimesForTrip.filter("stop_id == %d", closestToStart.stop_id).first!.stop_sequence
+                let endSeq = stopTimesForTrip.filter("stop_id == %d", closestToFinish.stop_id).first!.stop_sequence
+                if endSeq > startSeq {
+                    tripsToReturn.insert(trip.trip_id)
+                }
+            }
+            
+            return self.filter("trip_id IN %@", tripsToReturn)
+    }
+    
+//    func closestStopToLocation(targetlocation: CLLocation) -> GTFSStopTime {
+//        
+//        let realm = try! Realm()
+//        let stops = realm.objects(GTFSStop.self).filter("stop_id IN %@", self.valueForKey("stop_id")!)
+//        var shortestDistance = -1.0;
+//        var closestStop = GTFSStop()
+//        for stop in stops {
+//            let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
+//            let currentDistance = stopLocation.distanceFromLocation(targetlocation)
+//            if shortestDistance < 1 || currentDistance < shortestDistance {
+//                shortestDistance = currentDistance
+//                closestStop = stop
+//            }
+//        }
+//        return closestStop
+//    }
 }
