@@ -136,20 +136,4 @@ extension Results where T:GTFSTrip {
             return self.filter("trip_id IN %@", tripsToReturn)
     }
     
-//    func closestStopToLocation(targetlocation: CLLocation) -> GTFSStopTime {
-//        
-//        let realm = try! Realm()
-//        let stops = realm.objects(GTFSStop.self).filter("stop_id IN %@", self.valueForKey("stop_id")!)
-//        var shortestDistance = -1.0;
-//        var closestStop = GTFSStop()
-//        for stop in stops {
-//            let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
-//            let currentDistance = stopLocation.distanceFromLocation(targetlocation)
-//            if shortestDistance < 1 || currentDistance < shortestDistance {
-//                shortestDistance = currentDistance
-//                closestStop = stop
-//            }
-//        }
-//        return closestStop
-//    }
 }
