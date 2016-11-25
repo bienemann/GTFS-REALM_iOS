@@ -20,16 +20,16 @@ class GTFSShape: GTFSBaseModel {
     override class func typecast() -> ((String, AnyObject) -> AnyObject) {
         return { (key,value) in
             
-//            switch key {
-//            case "shape_id": fallthrough
-//            case "shape_pt_sequence":
-//                if value is NSNumber {
-//                    return value.intValue!
-//                }else{ return value }
-//            default:
+            switch key {
+            case "shape_id": fallthrough
+            case "shape_pt_sequence":
+                if value is NSNumber {
+                    return value.int64Value! as AnyObject
+                }else{ return value }
+            default:
                 return value
-//            }
-            
+            }
+        
         }
     }
     

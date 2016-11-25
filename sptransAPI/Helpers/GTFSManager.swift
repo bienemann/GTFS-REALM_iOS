@@ -15,7 +15,7 @@ class GTFSManager {
     
     static let sharedInstance = GTFSManager()
     
-    let baseURL = "http://10.77.126.132:8080"
+    let baseURL = "http://127.0.0.1:8080"
     var fileNames : Dictionary<String, String?> = ["agency": nil,
                                      "calendar": nil,
                                      "fare_attributes": nil,
