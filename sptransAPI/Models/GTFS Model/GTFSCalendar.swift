@@ -28,7 +28,7 @@ class GTFSCalendar: GTFSBaseModel {
             
             if key == "end_date" {
                 if value is NSNumber {
-                    return value.stringValue!
+                    return value.stringValue! as AnyObject
                 }
             }
             
@@ -41,7 +41,7 @@ class GTFSCalendar: GTFSBaseModel {
                 key == "sunday" {
                 
                 if value is NSNumber {
-                    return value.boolValue!
+                    return value.boolValue! as AnyObject
                 }
                 
             }

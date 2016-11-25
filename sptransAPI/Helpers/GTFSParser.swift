@@ -25,8 +25,8 @@ class GTFSParser : NSObject{
     }
     #endif
     
-    func parseDocument(filePath: String,
-                       processValues: (structure: Array<String>, line: Array<AnyObject>) -> GTFSBaseModel?,
+    func parseDocument(_ filePath: String,
+                       processValues: @escaping (_ structure: Array<String>, _ line: Array<AnyObject>) -> GTFSBaseModel?,
                        progress: ((Double, Double)->Void)?){
         
         var fileSize : UInt64 = 0
@@ -41,8 +41,17 @@ class GTFSParser : NSObject{
                                 #endif
                                 },
                                
+                               didEndDocument: {parser -> Void in
+                                try! self.realm!.commitWrite()
+                                #if DEBUG
+                                self.debugClosure(parser, filePath, self.startDate!, NSDate())
+                                #endif
+                                if progress != nil{
+                                    progress!(Double(fileSize/10), Double(fileSize/10))
+                                }},
+                               
                                didReadLine: { parser, values in
-                                let entry = processValues(structure: parser.header, line: values)
+                                let entry = processValues(parser.header, values)
                                 self.realm!.add(entry!)
                                 if parser.lineCount % 10000 == 0 {
                                 
@@ -53,22 +62,13 @@ class GTFSParser : NSObject{
                                     
                                     try! self.realm!.commitWrite()
                                     self.realm!.beginWrite()
-                                }},
-                               
-                               didEndDocument: {parser -> Void in
-                                try! self.realm!.commitWrite()
-                                #if DEBUG
-                                self.debugClosure(parser, filePath, self.startDate!, NSDate())
-                                #endif
-                                if progress != nil{
-                                    progress!(Double(fileSize/10), Double(fileSize/10))
                                 }}
         )
         
         parser.startReader()
     }
     
-    func parseLine<T:GTFSBaseModel>(structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{
+    func parseLine<T:GTFSBaseModel>(_ structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{
         
         if structure.count == line.count {
             return model.init(values: line, keys: structure, typecast: model.typecast())

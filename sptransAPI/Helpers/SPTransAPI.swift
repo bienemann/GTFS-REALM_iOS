@@ -16,43 +16,13 @@ class SPTransAPI : NSObject {
     let apiKey = "e86972bad776dfaaba882db93230bf1b4745a4c9d21ddfcd15c71106d2fa6f79"
     let baseURL = "http://api.olhovivo.sptrans.com.br/v0"
     
-    func authenticate(result:(result: Bool) -> Void) {
+    func authenticate(_ result:@escaping (_ result: Bool) -> Void) {
         let requestURL = "\(baseURL)/Login/Autenticar?token=\(apiKey)"
-        Alamofire.request(.POST, requestURL).responseJSON { response in
+        Alamofire.request(requestURL).responseJSON { response in
             if response.result.isSuccess{
-                result(result: response.result.value as! Bool)
-            }else{ result(result: false) }
+                result(response.result.value as! Bool)
+            }else{ result(false) }
         }
     }
-    
-    func buscarLinha(searchTerm: String, completion: (result : Array<LineModel>?) -> Void){
-        let requestURL = "\(baseURL)/Linha/Buscar?termosBusca=\(searchTerm.stringByAddingPercentEncodingWithAllowedCharacters(.URLHostAllowedCharacterSet())!)"
-        Alamofire.request(.GET, requestURL).responseJSON { (response) in
-            switch response.result.isSuccess{
-            case true:
-                
-                guard let JSON = response.result.value as! NSArray? else {
-                    completion(result: nil)
-                    return
-                }
-                
-                var lines : Array<LineModel> = Array()
-                for lineDict in JSON {
-                    guard let line = Mapper<LineModel>().map(lineDict) else {
-                        continue
-                    }
-                    lines.append(line)
-                }
-                completion(result: lines)
-                
-                break
-            case false:
-                completion(result: nil)
-                break
-            }
-        }
-        
-        
-    }
-    
+
 }

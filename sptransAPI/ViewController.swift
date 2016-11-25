@@ -25,33 +25,33 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         }else{
             print("downloading files and populating database")
             GTFSManager.downloadAndParseDocuments({ (error) in
-                dispatch_async(dispatch_get_main_queue(), { 
+                DispatchQueue.main.async(execute: { 
                     if error != nil {
                         let gtfsManagerAlert = UIAlertController(title: "GTFS Manager Error",
                             message: error?.description,
-                            preferredStyle: .Alert)
-                        gtfsManagerAlert.addAction(UIAlertAction(title: "OK", style: .Cancel, handler: nil))
-                        self.presentViewController(gtfsManagerAlert, animated: true, completion: nil)
+                            preferredStyle: .alert)
+                        gtfsManagerAlert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+                        self.present(gtfsManagerAlert, animated: true, completion: nil)
                     }else{
                         // tela de progresso
                         SVProgressHUD.showProgress(-1, status: "Calculando arquvos")
-                        SVProgressHUD.setDefaultMaskType(.Black)
-                        SVProgressHUD.setDefaultStyle(.Dark)
+                        SVProgressHUD.setDefaultMaskType(.black)
+                        SVProgressHUD.setDefaultStyle(.dark)
                     }
                 })
                 }, reportProgress: { progress, total in
                     let p = Float(progress/total)
-                    dispatch_async(dispatch_get_main_queue(), {
+                    DispatchQueue.main.async(execute: {
                         if p.isNaN {
                             SVProgressHUD.showProgress(-1, status: "Calculando arquvos...")
-                            SVProgressHUD.setDefaultMaskType(.Black)
-                            SVProgressHUD.setDefaultStyle(.Dark)
+                            SVProgressHUD.setDefaultMaskType(.black)
+                            SVProgressHUD.setDefaultStyle(.dark)
                         }
                         else if p >= 1 { SVProgressHUD.dismiss() }
                         else {
                             SVProgressHUD.showProgress(p, status: "Processando; \(Int(p*100))%")
-                            SVProgressHUD.setDefaultMaskType(.Black)
-                            SVProgressHUD.setDefaultStyle(.Dark)
+                            SVProgressHUD.setDefaultMaskType(.black)
+                            SVProgressHUD.setDefaultStyle(.dark)
                         }
                     })
             })
@@ -59,18 +59,18 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {
-                self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.greenColor()]
+                self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.green]
                 self.navigationItem.title = "Online"
             }else{
-                self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.redColor()]
+                self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.red]
                 self.navigationItem.title = "Offline"
             }
         }
     }
     
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         self.navigationItem.title = "Home"
-        self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.blackColor()]
+        self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.black]
         
     }
 
@@ -78,32 +78,32 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     //UITableView Methods
     
 
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.tableViewEntries.count
     }
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 44
     }
     
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCellWithIdentifier("home_cell", forIndexPath: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "home_cell", for: indexPath)
         cell.textLabel?.text = self.tableViewEntries[indexPath.row]
         return cell
         
     }
 
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         let entry = self.tableViewEntries[indexPath.row]
         switch entry {
         case "buscar linha":
-            self.performSegueWithIdentifier("buscar_linha", sender: tableView.cellForRowAtIndexPath(indexPath))
+            self.performSegue(withIdentifier: "buscar_linha", sender: tableView.cellForRow(at: indexPath))
             break
         case "teste mapa":
-            self.performSegueWithIdentifier("testar_mapa", sender: tableView.cellForRowAtIndexPath(indexPath))
+            self.performSegue(withIdentifier: "testar_mapa", sender: tableView.cellForRow(at: indexPath))
             break
         default:
             break

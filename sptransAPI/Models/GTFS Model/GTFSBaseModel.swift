@@ -10,12 +10,12 @@ import Foundation
 import Realm
 import RealmSwift
 
-public class GTFSBaseModel: Object {
+open class GTFSBaseModel: Object {
     
     required public init(values: Array<AnyObject>, keys: Array<String>, typecast:((String, AnyObject)->AnyObject)){
         
         var d = Dictionary<String, AnyObject>()
-        for (index,key) in keys.enumerate() {
+        for (index,key) in keys.enumerated() {
             d.updateValue(typecast(key, values[index]), forKey: key)
         }
         super.init(value: d)
@@ -29,8 +29,8 @@ public class GTFSBaseModel: Object {
         super.init()
     }
     
-    required public init(value: AnyObject, schema: RLMSchema) {
-        super.init(value: value, schema: schema)
+    required public init(value: Any, schema: RLMSchema) {
+        fatalError("init(value:schema:) has not been implemented")
     }
     
     class func typecast() -> ((String, AnyObject)->AnyObject) {

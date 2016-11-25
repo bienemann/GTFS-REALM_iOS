@@ -25,16 +25,16 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
     
     //Table View Delegate
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.searchDataSource.count > 0 ? self.searchDataSource.count + 1 : 0
     }
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 44
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("line_cell", forIndexPath: indexPath)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "line_cell", for: indexPath)
         
         if indexPath.row < self.searchDataSource.count {
             let line = self.searchDataSource[indexPath.row]
@@ -48,15 +48,15 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
         return cell
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        self.performSegueWithIdentifier("test_route", sender: tableView.cellForRowAtIndexPath(indexPath))
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.performSegue(withIdentifier: "test_route", sender: tableView.cellForRow(at: indexPath))
     }
     
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "test_route" {
-            let vc = segue.destinationViewController as! TestMapViewController
+            let vc = segue.destination as! TestMapViewController
             
-            let selectedIndex = self.tableView?.indexPathForCell(sender as! UITableViewCell)
+            let selectedIndex = self.tableView?.indexPath(for: sender as! UITableViewCell)
             
             
             if selectedIndex?.row == self.searchDataSource.count {
@@ -72,21 +72,21 @@ class TesteLinhaViewController: UIViewController, UITableViewDelegate, UITableVi
     
     //SearchBar Delegte
     
-    func searchBarSearchButtonClicked(searchBar: UISearchBar) {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
-        SVProgressHUD.showWithStatus("buscando linhas")
+        SVProgressHUD.show(withStatus: "buscando linhas")
         
         let trips = GTFSQuery.tripsContaining(searchBar.text!)
         
         self.searchDataSource.removeAll()
         if trips.count > 0 {
             print(trips)
-            self.searchDataSource.appendContentsOf(trips)
+            self.searchDataSource.append(contentsOf: trips)
         }else {
             //tratar sem resultados
         }
         
-        dispatch_async(dispatch_get_main_queue(), {
+        DispatchQueue.main.async(execute: {
             self.tableView?.reloadData()
             SVProgressHUD.dismiss()
         })

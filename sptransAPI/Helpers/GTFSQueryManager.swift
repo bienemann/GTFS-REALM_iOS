@@ -15,14 +15,14 @@ class GTFSQuery {
     
     //pragma - MARK: Trips
     
-    class func tripsContaining(term: String) -> Results<GTFSTrip>  {
+    class func tripsContaining(_ term: String) -> Results<GTFSTrip>  {
         let realm = try! Realm()
         return realm.objects(GTFSTrip.self).filter("route_id CONTAINS[c] %@ OR trip_headsign CONTAINS[c] %@",
                                                    term,
                                                    term)
     }
     
-    class func tripsPassingNear(point: CLLocation, distance: Double) -> Results<GTFSTrip>{ //distance in meters
+    class func tripsPassingNear(_ point: CLLocation, distance: Double) -> Results<GTFSTrip>{ //distance in meters
         
         var finalSet = Set<Int>()
         
@@ -38,25 +38,25 @@ class GTFSQuery {
         return realm.objects(GTFSTrip.self).filter("shape_id IN %@", finalSet)
     }
     
-    class func tripsFromLocation(start: CLLocation, toDestination end: CLLocation, walkingDistance dist: Double) -> Results<GTFSTrip>{
+    class func tripsFromLocation(_ start: CLLocation, toDestination end: CLLocation, walkingDistance dist: Double) -> Results<GTFSTrip>{
         let trips = GTFSQuery.tripsPassingNear(start, distance: dist)
-            .filter("trip_id IN %@", GTFSQuery.tripsPassingNear(end, distance: dist).valueForKey("trip_id")!)
+            .filter("trip_id IN %@", GTFSQuery.tripsPassingNear(end, distance: dist).value(forKey: "trip_id")!)
             .tripsByDirectionBasedOnLocations(start: start, end: end)
         return trips
     }
     
     //pragma - MARK: Shapes
     
-    class func shapesForTrip(trip: GTFSTrip) -> Results<GTFSShape> {
+    class func shapesForTrip(_ trip: GTFSTrip) -> Results<GTFSShape> {
         let realm = try! Realm()
         return realm.objects(GTFSShape.self)
             .filter("shape_id == %d", trip.shape_id.value!)
-            .sorted("shape_pt_sequence", ascending: true)
+            .sorted(byProperty: "shape_pt_sequence", ascending: true)
     }
     
     //pragma - MARK: Stops
     
-    class func stopsInsideArea(center: CLLocation, radius: Double) -> Results<GTFSStop> {
+    class func stopsInsideArea(_ center: CLLocation, radius: Double) -> Results<GTFSStop> {
         let (maxLat, minLat, maxLon, minLon) = center.boundingBoxForRadius(Float(radius))
         let realm = try! Realm()
         let preFilter = realm.objects(GTFSStop.self)
@@ -66,7 +66,7 @@ class GTFSQuery {
         var finalFilter = Set<Int>()
         for stop in preFilter {
             let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
-            if center.distanceFromLocation(stopLocation) <= radius {
+            if center.distance(from: stopLocation) <= radius {
                 finalFilter.insert(stop.stop_id)
             }
         }
@@ -74,7 +74,7 @@ class GTFSQuery {
         return finalResult
     }
     
-    class func stopsForTrip(trip: GTFSTrip) -> Results<GTFSStop>{
+    class func stopsForTrip(_ trip: GTFSTrip) -> Results<GTFSStop>{
         let stopTimes = GTFSQuery.stopTimesForTrip(trip)
         var stopsIDs = Set<Int>()
         for st in stopTimes {
@@ -84,14 +84,14 @@ class GTFSQuery {
         return realm.objects(GTFSStop.self).filter("stop_id IN %@", stopsIDs)
     }
     
-    class func stopClosestToPoint(userLocation: CLLocation) -> GTFSStop {
+    class func stopClosestToPoint(_ userLocation: CLLocation) -> GTFSStop {
         let realm = try! Realm()
         let stops = realm.objects(GTFSStop.self)
         var shortestDistance = -1.0;
         var closestStop = GTFSStop()
         for stop in stops {
             let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
-            let currentDistance = stopLocation.distanceFromLocation(userLocation)
+            let currentDistance = stopLocation.distance(from: userLocation)
             if shortestDistance < 1 || currentDistance < shortestDistance {
                 shortestDistance = currentDistance
                 closestStop = stop
@@ -102,11 +102,11 @@ class GTFSQuery {
     
     //pragma - MARK: StopTimes
     
-    class func stopTimesForTrip(trip:GTFSTrip, ordered:Bool = true) -> Results<GTFSStopTime> {
+    class func stopTimesForTrip(_ trip:GTFSTrip, ordered:Bool = true) -> Results<GTFSStopTime> {
         let realm = try! Realm()
         let r = realm.objects(GTFSStopTime.self).filter("trip_id == %@", trip.trip_id)
         if ordered {
-            return r.sorted("stop_sequence", ascending: true)
+            return r.sorted(byProperty: "stop_sequence", ascending: true)
         }else{
             return r
         }
@@ -115,7 +115,7 @@ class GTFSQuery {
     //pragma - MARK: Legacy reference
     //=========================================================================================
     
-    class func legacyTripsPassingNear(point: CLLocation, distance: Double) -> Results<GTFSTrip>{
+    class func legacyTripsPassingNear(_ point: CLLocation, distance: Double) -> Results<GTFSTrip>{
         
         var finalSet = Set<Int>()
         
@@ -123,12 +123,12 @@ class GTFSQuery {
         //and organizes shapes by their route order
         let realm = try! Realm()
         let shapes = Array(realm.objects(GTFSShape.self)
-            .sorted("shape_pt_sequence", ascending: true)
-            .sorted("shape_id"))
+            .sorted(byProperty: "shape_pt_sequence", ascending: true)
+            .sorted(byProperty: "shape_id"))
         
         //Further filtering the returned shapes, testing if the lines they form intersect
         //with the radius we defined.
-        autoreleasepool{ for (index, shape) in shapes.enumerate() {
+        autoreleasepool{ for (index, shape) in shapes.enumerated() {
             
             if index != shapes.count - 1 { //Prevents out of bounds exception
                 

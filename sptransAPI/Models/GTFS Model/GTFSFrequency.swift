@@ -20,15 +20,15 @@ class GTFSFrequency: GTFSBaseModel {
     override class func typecast() -> ((String, AnyObject) -> AnyObject) {
         return { (key,value) in
             
-            switch key {
-            case "headway_secs": fallthrough
-            case "exact_times":
-                if value is NSNumber {
-                    return value.integerValue!
-                }else{ return value }
-            default:
+//            switch key {
+//            case "headway_secs": fallthrough
+//            case "exact_times":
+//                if value is NSNumber {
+//                    return value.intValue!
+//                }else{ return value }
+//            default:
                 return value
-            }
+//            }
             
         }
     }

@@ -32,48 +32,48 @@ import RealmSwift
 /// The value delimiter defaults to "," but can be any other character you like.
 
 
-public class CSVParser: NSObject
+open class CSVParser: NSObject
 {
     let csvFile: TextFile
-    private var delim: UInt32
-    private var delimiter: String
-    private var quote: UInt32
-    public var indexed: Bool = false
-    public var header : [String] = []
+    fileprivate var delim: UInt32
+    fileprivate var delimiter: String
+    fileprivate var quote: UInt32
+    open var indexed: Bool = false
+    open var header : [String] = []
     
-    public var converterClosure : (([String], [AnyObject]) -> GTFSBaseModel?)?
+    open var converterClosure : (([String], [AnyObject]) -> GTFSBaseModel?)?
 
-    public var doBeforeLine: ((CSVParser, [AnyObject]) -> Void)?
-    public var doWhileProcessingLine: ((CSVParser, [AnyObject]) -> Void)?
-    public var doAfterLine: ((CSVParser, [AnyObject]) -> Void)?
+    open var doBeforeLine: ((CSVParser, [AnyObject]) -> Void)?
+    open var doWhileProcessingLine: ((CSVParser, [AnyObject]) -> Void)?
+    open var doAfterLine: ((CSVParser, [AnyObject]) -> Void)?
     
     /// The current line number being processed in the CSV file
-    public var lineCount = 0
-    public var csvStreamReader : StreamReader? = nil
+    open var lineCount = 0
+    open var csvStreamReader : StreamReader? = nil
     
     enum ParserState
     {
-        case ROW_NOT_BEGUN				//	There have not been any fields encountered for this row
-        case FIELD_NOT_BEGUN			//	There have been fields but we are currently not in one
-        case FIELD_BEGUN				//	We are in a field
-        case FIELD_MIGHT_HAVE_ENDED		//	We encountered a double quote inside a quoted field
+        case row_NOT_BEGUN				//	There have not been any fields encountered for this row
+        case field_NOT_BEGUN			//	There have been fields but we are currently not in one
+        case field_BEGUN				//	We are in a field
+        case field_MIGHT_HAVE_ENDED		//	We encountered a double quote inside a quoted field
     }
     
-    private var pstate		= ParserState.FIELD_NOT_BEGUN
-    private var quoted		= false
-    private var spaces		= 0
-    private var entryPos	= 0
+    fileprivate var pstate		= ParserState.field_NOT_BEGUN
+    fileprivate var quoted		= false
+    fileprivate var spaces		= 0
+    fileprivate var entryPos	= 0
     
-    private var startClosure : (CSVParser->Void)?
-    private var endClosure : (CSVParser->Void)?
-    private var readLineClosure : ((CSVParser, Array<AnyObject>) -> Void)?
+    fileprivate var startClosure : ((CSVParser)->Void)?
+    fileprivate var endClosure : ((CSVParser)->Void)?
+    fileprivate var readLineClosure : ((CSVParser, Array<AnyObject>) -> Void)?
     
-    private let csvTab: UInt32		= 0x09
-    private let csvSpace: UInt32	= 0x20
-    private let csvCR: UInt32		= 0x0d
-    private let csvLF: UInt32		= 0x0a
-    private let csvComma: UInt32	= 0x2c
-    private let csvQuote: UInt32	= 0x22
+    fileprivate let csvTab: UInt32		= 0x09
+    fileprivate let csvSpace: UInt32	= 0x20
+    fileprivate let csvCR: UInt32		= 0x0d
+    fileprivate let csvLF: UInt32		= 0x0a
+    fileprivate let csvComma: UInt32	= 0x2c
+    fileprivate let csvQuote: UInt32	= 0x22
     
     
     /// Initialize the CSV object with a file path.
@@ -81,8 +81,8 @@ public class CSVParser: NSObject
     ///   - path: an input path for a CSV reader or an output path for a writer.
     ///   - delegate: the parser delegate object
     public init(path: String, structure: Bool = false,
-                didStartDocument: (CSVParser->Void)? = nil,
-                didEndDocument: (CSVParser->Void)? = nil,
+                didStartDocument: ((CSVParser)->Void)? = nil,
+                didEndDocument: ((CSVParser)->Void)? = nil,
                 didReadLine: ((CSVParser, Array<AnyObject>) -> Void)? = nil){
         
         self.csvFile = TextFile(path: path)
@@ -102,7 +102,7 @@ public class CSVParser: NSObject
     /// - Parameters:
     ///   - delimiter: optional delimeter character, defaults to ","
     ///   - quote: optional quote character, defaults to "\"".  A field in a CSV file that contains the delimiter character should be quoted.
-    public func startReader(delimiter: String = ",", quote: String = "\"")
+    open func startReader(_ delimiter: String = ",", quote: String = "\"")
     {
         self.delimiter = delimiter
         self.delim	= (delimiter.unicodeScalars.first?.value)!
@@ -117,7 +117,7 @@ public class CSVParser: NSObject
             
             var line = csvStreamReader!.nextLine()
             while line != nil{
-                autoreleasepool({ 
+                autoreleasepool(invoking: { 
                     
                     let parsedLine = parse(line!)
                     lineCount += 1
@@ -152,7 +152,7 @@ public class CSVParser: NSObject
     /// - Parameters:
     ///   - delimiter: optional delimeter character, defaults to ","
     ///   - quote: optional quote character, defaults to "\"".  A field in a CSV file that contains the delimiter character should be quoted.
-    public func writer(delimiter: String = ",", quote: String = "\"")
+    open func writer(_ delimiter: String = ",", quote: String = "\"")
     {
         self.delimiter = delimiter
         self.delim	= (delimiter.unicodeScalars.first?.value)!
@@ -162,13 +162,13 @@ public class CSVParser: NSObject
     }
     
     //	used to time the TextFile reader without csv parsing getting in the way
-    private func xparse(line: String) -> [String]
+    fileprivate func xparse(_ line: String) -> [String]
     {
         let components = [String]()
         return components
     }
     
-    private func parse(line: String) -> [AnyObject]
+    fileprivate func parse(_ line: String) -> [AnyObject]
     {
         //		print( "\n\(line)")
         
@@ -178,16 +178,16 @@ public class CSVParser: NSObject
         entryPos	= 0
         quoted		= false
         spaces		= 0
-        pstate		= .ROW_NOT_BEGUN
+        pstate		= .row_NOT_BEGUN
         
         for ch in line.unicodeScalars
         {
             let c = ch.value
             switch pstate
             {
-            case .ROW_NOT_BEGUN:
+            case .row_NOT_BEGUN:
                 fallthrough
-            case .FIELD_NOT_BEGUN:
+            case .field_NOT_BEGUN:
                 if ((c == csvSpace) || (c == csvTab)) && (c != delim)
                 {
                     //	space or tab
@@ -196,36 +196,36 @@ public class CSVParser: NSObject
                 else
                     if c == delim
                     {
-                        components.append(field)	//	SUBMIT_FIELD
+                        components.append(field as AnyObject)	//	SUBMIT_FIELD
                         field = ""
                         
                         entryPos	= 0
                         quoted		= false
                         spaces		= 0
-                        pstate		= .FIELD_NOT_BEGUN
+                        pstate		= .field_NOT_BEGUN
                     }
                     else
                         if c == quote
                         {
                             quoted = true
-                            pstate = .FIELD_BEGUN
+                            pstate = .field_BEGUN
                         }
                         else
                         {
-                            field.append(ch)			//	SUBMIT_CHAR
+                            field.append(String(ch))			//	SUBMIT_CHAR
                             entryPos += 1
                             quoted = false
-                            pstate = .FIELD_BEGUN
+                            pstate = .field_BEGUN
                 }
                 
-            case .FIELD_BEGUN:
+            case .field_BEGUN:
                 if c == quote
                 {
                     if quoted
                     {
-                        field.append(ch)		//	SUBMIT_CHAR
+                        field.append(String(ch))		//	SUBMIT_CHAR
                         entryPos += 1
-                        pstate = .FIELD_MIGHT_HAVE_ENDED
+                        pstate = .field_MIGHT_HAVE_ENDED
                     }
                     else
                     {
@@ -237,7 +237,7 @@ public class CSVParser: NSObject
                         //							return pos-1;
                         //						}
                         
-                        field.append(ch)		//	SUBMIT_CHAR
+                        field.append(String(ch))		//	SUBMIT_CHAR
                         entryPos += 1
                         spaces = 0
                     }
@@ -248,7 +248,7 @@ public class CSVParser: NSObject
                         //	Delimiter
                         if quoted
                         {
-                            field.append(ch)		//	SUBMIT_CHAR
+                            field.append(String(ch))		//	SUBMIT_CHAR
                             entryPos += 1
                         }
                         else
@@ -259,7 +259,7 @@ public class CSVParser: NSObject
                             entryPos	= 0
                             quoted		= false
                             spaces		= 0
-                            pstate		= .FIELD_NOT_BEGUN
+                            pstate		= .field_NOT_BEGUN
                         }
                     }
                     else
@@ -267,37 +267,37 @@ public class CSVParser: NSObject
                         {
                             //	Tab or space for non-quoted field
                             
-                            field.append(ch)			//	SUBMIT_CHAR
+                            field.append(String(ch))			//	SUBMIT_CHAR
                             entryPos += 1
                             spaces += 1
                         }
                         else
                         {
-                            field.append(ch)			//	SUBMIT_CHAR
+                            field.append(String(ch))			//	SUBMIT_CHAR
                             entryPos += 1
                             spaces = 0
                 }
                 
-            case .FIELD_MIGHT_HAVE_ENDED:
+            case .field_MIGHT_HAVE_ENDED:
                 //	This only happens when a quote character is encountered in a quoted field
                 if c == delim
                 {
-                    let range = field.endIndex.advancedBy(-(spaces + 1)) ..< field.endIndex
-                    field.removeRange(range)
+                    let range = field.characters.index(field.endIndex, offsetBy: -(spaces + 1)) ..< field.endIndex
+                    field.removeSubrange(range)
                     
                     entryPos -= (spaces + 1)	//	get rid of spaces and original quote
-                    components.append(field)	//	SUBMIT_FIELD -- might be quoted text
+                    components.append(field as AnyObject)	//	SUBMIT_FIELD -- might be quoted text
                     field = ""
                     
                     entryPos	= 0
                     quoted		= false
                     spaces		= 0
-                    pstate		= .FIELD_NOT_BEGUN
+                    pstate		= .field_NOT_BEGUN
                 }
                 else
                     if (c == csvSpace) || (c == csvTab)
                     {
-                        field.append(ch)			//	SUBMIT_CHAR
+                        field.append(String(ch))			//	SUBMIT_CHAR
                         entryPos += 1
                         spaces += 1
                     }
@@ -317,40 +317,40 @@ public class CSVParser: NSObject
                                 //							return pos-1;
                                 //						}
                                 
-                                field.append(ch)		//	SUBMIT_CHAR
+                                field.append(String(ch))		//	SUBMIT_CHAR
                                 entryPos += 1
                                 spaces = 0
                             }
                             else
                             {
                                 //	Two quotes in a row
-                                pstate = .FIELD_BEGUN
+                                pstate = .field_BEGUN
                             }
                         }
                         else
                         {
                             //	Anything else
-                            field.append(ch)			//	SUBMIT_CHAR
+                            field.append(String(ch))			//	SUBMIT_CHAR
                             entryPos += 1
                             spaces = 0
-                            pstate = .FIELD_BEGUN
+                            pstate = .field_BEGUN
                 }
             }
         }
         
-        if pstate == .FIELD_BEGUN
+        if pstate == .field_BEGUN
         {
             //	We still have an unfinished field
             components.append(field.numberValue()) // --might be anything, always last component
         }
         else
-            if pstate == .FIELD_MIGHT_HAVE_ENDED
+            if pstate == .field_MIGHT_HAVE_ENDED
             {
                 if !field.isEmpty
                 {
-                    let range = field.endIndex.advancedBy(-(spaces + 1)) ..< field.endIndex
-                    field.removeRange(range)
-                    components.append(field) // --might be quoted txt, always last omponent
+                    let range = field.characters.index(field.endIndex, offsetBy: -(spaces + 1)) ..< field.endIndex
+                    field.removeSubrange(range)
+                    components.append(field as AnyObject) // --might be quoted txt, always last omponent
                 }
         }
         
@@ -362,9 +362,9 @@ extension String {
     
     func numberValue() -> AnyObject {
         if let n = Double(self) {
-            return NSNumber(double: n)
+            return NSNumber(value: n as Double)
         }else{
-            return self
+            return self as AnyObject
         }
     }
 

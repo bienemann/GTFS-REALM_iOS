@@ -36,7 +36,7 @@ class GTFSManager {
         
     }
     
-    class func downloadAndParseDocuments(error: NSError? -> Void, reportProgress: ((Double, Double)->Void)?) {
+    class func downloadAndParseDocuments(_ error: @escaping (NSError?) -> Void, reportProgress: ((Double, Double)->Void)?) {
         
         GTFSManager.sharedInstance.downloadGTFS { (finished, err) in
             
@@ -49,7 +49,7 @@ class GTFSManager {
         
             print("Finished downloading GTFS files\nstarting parse\n")
             for (key, value) in GTFSManager.sharedInstance.fileNames {
-                autoreleasepool({
+                autoreleasepool(invoking: {
                     var classType : GTFSBaseModel.Type = GTFSBaseModel.self
                     switch key{
                     case "agency":
@@ -94,8 +94,8 @@ class GTFSManager {
                     
                     let parser = GTFSParser()
                     
-                    let queue = dispatch_queue_create(key, DISPATCH_QUEUE_CONCURRENT)
-                    dispatch_async(queue, { 
+                    let queue = DispatchQueue(label: key, attributes: DispatchQueue.Attributes.concurrent)
+                    queue.async(execute: { 
                         parser.parseDocument(value!,
                             processValues: { (structure, line) -> GTFSBaseModel? in
                                 return parser.parseLine(structure, line: line, model: classType)
@@ -110,12 +110,12 @@ class GTFSManager {
                                             totalProgress += v[0]
                                             totalGoal += v[1]
                                         }
-                                        dispatch_async(dispatch_get_main_queue(), { 
+                                        DispatchQueue.main.async(execute: { 
                                             reportProgress!(totalProgress, totalGoal)
                                         })
                                     }
                                 }else{
-                                    dispatch_async(dispatch_get_main_queue(), {
+                                    DispatchQueue.main.async(execute: {
                                         reportProgress!(Double(0), Double(0))
                                     })
                                 }
@@ -134,43 +134,41 @@ class GTFSManager {
         return true
     }
     
-    func downloadGTFS(finished: (Bool, NSError?) -> Void){
+    func downloadGTFS(_ finished: @escaping (Bool, NSError?) -> Void){
         
         print("starting GTFS files download")
         
-        let downloadQueue = dispatch_queue_create("com.mydlqueue", DISPATCH_QUEUE_CONCURRENT)
-        let GTFSBundleDispatchGroup = dispatch_group_create()
+        let downloadQueue = DispatchQueue(label: "com.mydlqueue", attributes: DispatchQueue.Attributes.concurrent)
+        let GTFSBundleDispatchGroup = DispatchGroup()
         var dirty : Bool = false
         var dlError : NSError? = nil
         
         for (key, _) in self.fileNames {
             
-            dispatch_group_enter(GTFSBundleDispatchGroup)
+            GTFSBundleDispatchGroup.enter()
             
-            let path = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0] as NSURL
-            let customPath = path.URLByAppendingPathComponent("GTFS/\(key).txt")
-            if !NSFileManager.defaultManager().fileExistsAtPath("\(path.relativePath!)/GTFS") {
-                try! NSFileManager.defaultManager().createDirectoryAtPath("\(path.URLByAppendingPathComponent("GTFS").relativePath!)", withIntermediateDirectories: true, attributes: nil)
+            let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0] as URL
+            let customPath = path.appendingPathComponent("GTFS/\(key).txt")
+            if !FileManager.default.fileExists(atPath: "\(path.relativePath)/GTFS") {
+                try! FileManager.default.createDirectory(atPath: "\(path.appendingPathComponent("GTFS").relativePath)", withIntermediateDirectories: true, attributes: nil)
             }
             
-            Alamofire.download(.GET, "\(self.baseURL)/\(key).txt", destination: { (_, _) -> NSURL in
-                if NSFileManager.defaultManager().fileExistsAtPath(customPath.relativePath!) {
-                    try! NSFileManager.defaultManager().removeItemAtPath(customPath.relativePath!)
-                }
-                return customPath
-            }).response(completionHandler: { (request, resonse, data, error) in
-                if error != nil {
+            let url = URLRequest(url: URL(string: "\(self.baseURL)/\(key).txt")!)
+            Alamofire.download(url, to: { (_, _) -> (destinationURL: URL, options: DownloadRequest.DownloadOptions) in
+                return (customPath, [.createIntermediateDirectories, .removePreviousFile])
+            }).response { response in
+                if response.error != nil {
                     dirty = true
-                    dlError = error
+                    dlError = response.error as NSError?
                 }
-                    self.fileNames.updateValue(customPath.relativePath!, forKey: key)
-                    dispatch_group_leave(GTFSBundleDispatchGroup)
-            })
+                self.fileNames.updateValue(customPath.relativePath, forKey: key)
+                GTFSBundleDispatchGroup.leave()
+            }
             
         }
         
-        dispatch_group_notify(GTFSBundleDispatchGroup, downloadQueue, {
-            dispatch_async(dispatch_get_main_queue(), {
+        GTFSBundleDispatchGroup.notify(queue: downloadQueue, execute: {
+            DispatchQueue.main.async(execute: {
                 finished(!dirty, dlError)
             })
         })

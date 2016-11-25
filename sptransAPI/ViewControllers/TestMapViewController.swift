@@ -37,14 +37,14 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
         btnGo?.layer.cornerRadius = 5.0
     }
     
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         locationManager.stopUpdatingLocation()
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         
         for line in lines {
-            self.mapView!.addOverlay(line.renderer.overlay)
+            self.mapView!.add(line.renderer.overlay)
             self.mapView!.addAnnotation(line.lastPointAnnotation)
             self.mapView!.addAnnotation(line.firstPointAnnotation)
         }
@@ -56,7 +56,7 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
 //        self.showTripsOnMap()
     }
     
-    func showTripsOnMap(firstLocation: CLLocation, secondLocation: CLLocation? = nil) {
+    func showTripsOnMap(_ firstLocation: CLLocation, secondLocation: CLLocation? = nil) {
 //        if self.lines.count < 1 {
         
             self.mapView!.removeOverlays(self.mapView!.overlays)
@@ -85,18 +85,18 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
             }
             self.lines = a
             
-            circle = Circle(centerCoordinate: p1.coordinate, radius: 200.0)
+            circle = Circle(center: p1.coordinate, radius: 200.0)
             circle.renderer = circle.customRenderer()
-            self.mapView!.addOverlay(circle.renderer!.overlay)
+            self.mapView!.add(circle.renderer!.overlay)
             
             if secondLocation != nil {
-                circle2 = Circle(centerCoordinate: secondLocation!.coordinate, radius: 200.0)
+                circle2 = Circle(center: secondLocation!.coordinate, radius: 200.0)
                 circle2.renderer = circle2.customRenderer()
-                self.mapView!.addOverlay(circle2.renderer!.overlay)
+                self.mapView!.add(circle2.renderer!.overlay)
             }
 
             for line in lines {
-                self.mapView!.addOverlay(line.renderer.overlay)
+                self.mapView!.add(line.renderer.overlay)
                 self.mapView!.addAnnotation(line.lastPointAnnotation)
                 self.mapView!.addAnnotation(line.firstPointAnnotation)
             }
@@ -113,8 +113,8 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
         
         if firstAddrTxtField!.text == nil ||
         firstAddrTxtField!.text!.isEmpty == true {
-            SVProgressHUD.setDefaultMaskType(.Clear)
-            SVProgressHUD.showInfoWithStatus("primeiro campo deve ser preenchido")
+            SVProgressHUD.setDefaultMaskType(.clear)
+            SVProgressHUD.showInfo(withStatus: "primeiro campo deve ser preenchido")
         }else if(secndAddrTxtField!.text == nil ||
             secndAddrTxtField!.text!.isEmpty == true){
             geocoder.geocodeAddressString(firstAddrTxtField!.text!, completionHandler: { (placemark, error) in
@@ -150,16 +150,16 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     
     //MARK: - MKMapView Delegate
     
-    func mapView(mapView: MKMapView, didUpdateUserLocation userLocation: MKUserLocation) {
+    func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
         // TOOD: tratar
 //        self.showTripsOnMap()
     }
     
-    func mapView(mapView: MKMapView, didFailToLocateUserWithError error: NSError) {
+    func mapView(_ mapView: MKMapView, didFailToLocateUserWithError error: Error) {
         //tratar
     }
     
-    func mapView(mapView: MKMapView, rendererForOverlay overlay: MKOverlay) -> MKOverlayRenderer {
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         
         for line in lines {
             if overlay.isEqual(line.renderer.overlay){
@@ -177,15 +177,15 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
         return MKOverlayRenderer()
     }
     
-    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         
-        if annotation.isKindOfClass(MKUserLocation.self){
+        if annotation.isKind(of: MKUserLocation.self){
             return nil
         }
-        if annotation.isKindOfClass(StartingPointAnnotation.self) {
+        if annotation.isKind(of: StartingPointAnnotation.self) {
             return StartingPointAnnotationView(annotation: annotation)
         }
-        if annotation.isKindOfClass(EndPointAnnotation.self){
+        if annotation.isKind(of: EndPointAnnotation.self){
             return EndPointAnnotationView(annotation: annotation)
         }
         
@@ -194,22 +194,22 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     
     // MARK: - Location Manager Delegate
     
-    func locationManager(manager: CLLocationManager, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         // TODO: tratar
     }
     
-    func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         // TODO: tratar
     }
     
 
-    func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         //TODO: tratar
     }
     
     // MARK: - TextField Delegate
     
-    func textFieldDidEndEditing(textField: UITextField) {
+    func textFieldDidEndEditing(_ textField: UITextField) {
         
         if (firstAddrTxtField!.text != nil &&
             firstAddrTxtField!.text!.isEmpty != true) &&

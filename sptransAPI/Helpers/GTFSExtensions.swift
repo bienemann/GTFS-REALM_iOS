@@ -20,7 +20,7 @@ extension CLLocation {
      - parameter radius: The radius (in meters) from the center.
      - returns: A tuple containing the four points that make the bounding box that contains the wole area defined.
      */
-    public func boundingBoxForRadius(radius: Float) -> (Float, Float, Float, Float){
+    public func boundingBoxForRadius(_ radius: Float) -> (Float, Float, Float, Float){
         
         let R : Float = 6371000.0
         let distanceByRDeg = GLKMathRadiansToDegrees(radius/R)
@@ -42,7 +42,7 @@ extension CLLocation {
      - parameter path: The coordinates for point A and B of the segment inside a tuple (A, B)
      - returns: The CLLocation inside the path and closest to self.
      */
-    public func closestLocationInPath(path:(CLLocationCoordinate2D, CLLocationCoordinate2D)) -> CLLocation {
+    public func closestLocationInPath(_ path:(CLLocationCoordinate2D, CLLocationCoordinate2D)) -> CLLocation {
         
         let (A, B) = path
         let dAP : (x: Double, y: Double) = (self.coordinate.latitude - A.latitude,
@@ -74,15 +74,15 @@ extension CLLocation {
      - parameter path: The coordinates for point A and B of the segment inside a tuple (A, B)
      - returns: The shortest distance from self to a path segment.
      */
-    public func shortestDistanceToPath(path:(CLLocationCoordinate2D, CLLocationCoordinate2D)) -> CLLocationDistance{
-        return self.distanceFromLocation(self.closestLocationInPath(path))
+    public func shortestDistanceToPath(_ path:(CLLocationCoordinate2D, CLLocationCoordinate2D)) -> CLLocationDistance{
+        return self.distance(from: self.closestLocationInPath(path))
     }
 }
 
 extension GTFSStop {
-    func distanceToLocation(location: CLLocation) -> Double {
+    func distanceToLocation(_ location: CLLocation) -> Double {
         let stopLocation = CLLocation(latitude: self.stop_lat, longitude: self.stop_lon)
-        return stopLocation.distanceFromLocation(location)
+        return stopLocation.distance(from: location)
     }
 }
 
@@ -90,7 +90,7 @@ extension Results where T:GTFSStop {
     
     func tripsForStops() -> Results<GTFSTrip>{
         let realm = try! Realm()
-        let stopTimes = realm.objects(GTFSStopTime.self).filter("stop_id IN %@", self.valueForKey("stop_id")!)
+        let stopTimes = realm.objects(GTFSStopTime.self).filter("stop_id IN %@", self.value(forKey: "stop_id")!)
         var IDTrips = Set<String>()
         for st in stopTimes {
             IDTrips.insert(st.trip_id)
@@ -98,12 +98,12 @@ extension Results where T:GTFSStop {
         return realm.objects(GTFSTrip.self).filter("trip_id IN %@", IDTrips)
     }
     
-    func closestStopFromLocation(location : CLLocation) -> GTFSStop {
+    func closestStopFromLocation(_ location : CLLocation) -> GTFSStop {
         var shortestDistance = -1.0;
         var closestStop = GTFSStop()
         for stop in self {
             let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
-            let currentDistance = stopLocation.distanceFromLocation(location)
+            let currentDistance = stopLocation.distance(from: location)
             if shortestDistance < 1 || currentDistance < shortestDistance {
                 shortestDistance = currentDistance
                 closestStop = stop
@@ -115,15 +115,15 @@ extension Results where T:GTFSStop {
 
 extension Results where T:GTFSTrip {
     
-    func tripsByDirectionBasedOnLocations(start start:CLLocation, end:CLLocation)
+    func tripsByDirectionBasedOnLocations(start:CLLocation, end:CLLocation)
         -> Results<T>{
             let realm = try! Realm()
-            let stopTimes = realm.objects(GTFSStopTime.self).filter("trip_id IN %@", self.valueForKey("trip_id")!)
-            let stops = realm.objects(GTFSStop.self).filter("stop_id IN %@", stopTimes.valueForKey("stop_id")!)
+            let stopTimes = realm.objects(GTFSStopTime.self).filter("trip_id IN %@", self.value(forKey: "trip_id")!)
+            let stops = realm.objects(GTFSStop.self).filter("stop_id IN %@", stopTimes.value(forKey: "stop_id")!)
             var tripsToReturn = Set<String>()
             for trip in self {
                 let stopTimesForTrip = stopTimes.filter("trip_id == %@", trip.trip_id)
-                let stopsForTrip = stops.filter("stop_id IN %@", stopTimesForTrip.valueForKey("stop_id")!)
+                let stopsForTrip = stops.filter("stop_id IN %@", stopTimesForTrip.value(forKey: "stop_id")!)
                 let closestToStart = stopsForTrip.closestStopFromLocation(start)
                 let closestToFinish = stopsForTrip.closestStopFromLocation(end)
                 let startSeq = stopTimesForTrip.filter("stop_id == %d", closestToStart.stop_id).first!.stop_sequence

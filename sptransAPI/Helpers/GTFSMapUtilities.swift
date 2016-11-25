@@ -16,8 +16,8 @@ class Circle : MKCircle {
     
     func customRenderer() -> MKCircleRenderer{
         let renderer = MKCircleRenderer(circle: self)
-        renderer.strokeColor = UIColor.greenColor()
-        renderer.fillColor = UIColor.greenColor().colorWithAlphaComponent(0.3)
+        renderer.strokeColor = UIColor.green
+        renderer.fillColor = UIColor.green.withAlphaComponent(0.3)
         return renderer
     }
     
@@ -40,7 +40,7 @@ class GTFSTripPolyline: MKPolyline {
         let shapes = GTFSQuery.shapesForTrip(trip)
         var coordinates = Array<CLLocationCoordinate2D>()
         for shape in shapes {
-            autoreleasepool({ 
+            autoreleasepool(invoking: { 
                 let coord = CLLocationCoordinate2D(latitude: shape.shape_pt_lat,
                     longitude: shape.shape_pt_lon)
                 coordinates.append(coord)
@@ -48,7 +48,7 @@ class GTFSTripPolyline: MKPolyline {
         }
         
         self.init()
-        self.init(coordinates: UnsafeMutablePointer(coordinates), count: coordinates.count)
+        self.init(coordinates: UnsafeMutablePointer(mutating: coordinates), count: coordinates.count)
         
         self.renderer = self.customLineRenderer(self)
         self.firstPointAnnotation = StartingPointAnnotation(lat: shapes.first!.shape_pt_lat,
@@ -57,21 +57,21 @@ class GTFSTripPolyline: MKPolyline {
                                                        lon: shapes.last!.shape_pt_lon)
     }
     
-    func customLineRenderer(line: GTFSTripPolyline) -> MKPolylineRenderer{
+    func customLineRenderer(_ line: GTFSTripPolyline) -> MKPolylineRenderer{
         let renderer = MKPolylineRenderer(polyline: line)
         renderer.strokeColor = UIColor(red: 0.23, green: 0.36, blue: 0.75, alpha: 0.5)
         renderer.lineWidth = 3
-        renderer.lineCap = CGLineCap.Square
+        renderer.lineCap = CGLineCap.square
         return renderer
     }
     
-    class func mapRectForLinesList(lines:Array<GTFSTripPolyline>, borderPercentage: Int) -> MKMapRect{
+    class func mapRectForLinesList(_ lines:Array<GTFSTripPolyline>, borderPercentage: Int) -> MKMapRect{
         
         var mapRect = MKMapRect()
         if lines.count == 1 {
             mapRect = lines.first!.renderer.overlay.boundingMapRect
         }else{
-            for (index, _) in lines.enumerate() {
+            for (index, _) in lines.enumerated() {
                 if index+1 == lines.count {
                     continue
                 }
@@ -113,14 +113,12 @@ class StartingPointAnnotationView: MKPinAnnotationView {
     init(annotation: MKAnnotation){
         super.init(annotation: annotation, reuseIdentifier: "start_point_pin_identifier")
         if #available(iOS 9.0, *) {
-            self.pinTintColor = UIColor.greenColor()
+            self.pinTintColor = UIColor.green
         } else {
-            self.pinColor = MKPinAnnotationColor.Green
+            self.pinColor = MKPinAnnotationColor.green
         }
     }
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-    }
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
@@ -130,14 +128,12 @@ class EndPointAnnotationView: MKPinAnnotationView {
     init(annotation: MKAnnotation){
         super.init(annotation: annotation, reuseIdentifier: "end_point_pin_identifier")
         if #available(iOS 9.0, *) {
-            self.pinTintColor = UIColor.redColor()
+            self.pinTintColor = UIColor.red
         } else {
-            self.pinColor = MKPinAnnotationColor.Red
+            self.pinColor = MKPinAnnotationColor.red
         }
     }
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-    }
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }

@@ -26,17 +26,17 @@
 import Foundation
 
 /// A class representing a text file.
-public class TextFile
+open class TextFile
 {
     var path: String
-    var encoding: NSStringEncoding
+    var encoding: String.Encoding
     
     /// Initializes a text file from a path using NSUTF8StringEncoding.
     ///
     /// - Parameter path: The path to be created a text file from.
     public init(path: String)
     {
-        self.encoding = NSUTF8StringEncoding
+        self.encoding = String.Encoding.utf8
         self.path = path
     }
     
@@ -44,7 +44,7 @@ public class TextFile
     ///
     /// - Parameter path: The path to be created a text file from.
     /// - Parameter encoding: The encoding to be used for the text file.
-    public init(path: String, encoding: NSStringEncoding)
+    public init(path: String, encoding: String.Encoding)
     {
         self.encoding = encoding
         self.path = path
@@ -54,7 +54,7 @@ public class TextFile
     ///
     /// - Parameter bufferSize: The byte size of the read buffer.  Defaults to 4096 bytes.
     /// - Returns: A text file StreamReader.
-    public func reader(bufferSize: Int = 4096) -> StreamReader?
+    open func reader(_ bufferSize: Int = 4096) -> StreamReader?
     {
         return StreamReader(
             path: self.path,
@@ -68,44 +68,44 @@ public class TextFile
 
 
 /// A class to read a text file one line at a time.
-public class StreamReader
+open class StreamReader
 {
-    var fileHandle: NSFileHandle?
+    var fileHandle: FileHandle?
     var atEOF: Bool = false
-    let encoding: NSStringEncoding
+    let encoding: String.Encoding
     let bufferSize: Int
     var lineData: [UInt8]
     var lineIndex = 0
-    var tmpData = NSData()
-    var buffer = NSData()
+    var tmpData = Data()
+    var buffer = Data()
     var beginByte = 0
     let crDelim: UInt8 = 13		//	0x0D "\r"
     let lfDelim: UInt8 = 10		//	0x0A "\n"
     var crWasSeen = false
-    public var fileSize : UInt64 = 0
+    open var fileSize : UInt64 = 0
     
     init?(
         path: String,
-        encoding: NSStringEncoding = NSUTF8StringEncoding,
+        encoding: String.Encoding = String.Encoding.utf8,
         bufferSize: Int = 4096
         )
     {
         self.bufferSize = bufferSize
         self.encoding = encoding
-        self.lineData = [UInt8](count: bufferSize, repeatedValue: 0)
-        self.lineData.removeAll(keepCapacity: true)
+        self.lineData = [UInt8](repeating: 0, count: bufferSize)
+        self.lineData.removeAll(keepingCapacity: true)
         
         do
         {
-            let fileURL = NSURL(fileURLWithPath: path)
+            let fileURL = URL(fileURLWithPath: path)
             
-            self.fileHandle = try NSFileHandle(forReadingFromURL: fileURL)
+            self.fileHandle = try FileHandle(forReadingFrom: fileURL)
             
             //self.fileHandle = NSFileHandle(forReadingAtPath: path)
             if self.fileHandle != nil
             {
                 self.fileSize = (self.fileHandle?.seekToEndOfFile())!
-                self.fileHandle?.seekToFileOffset(0)
+                self.fileHandle?.seek(toFileOffset: 0)
                 //	TODO: examine the first 1024 bytes or so to determine if this is a "text" file.
             }
             else
@@ -139,7 +139,7 @@ public class StreamReader
     /// Return a line of text.  A "line" is any string of unicode characters upto but not including the line
     ///	terminator.  A line terminator is any of: <cr>, <lf>, or <crlf>
     /// - Returns: The next line or nil on EOF.  Blank lines are returned as the "" empty string.
-    public func nextLine() -> String?
+    open func nextLine() -> String?
     {
         var line: String?
         
@@ -148,7 +148,7 @@ public class StreamReader
             var chars: UnsafePointer<UInt8>
             var atEOL: Bool = false
             
-            lineData.removeAll(keepCapacity: true)
+            lineData.removeAll(keepingCapacity: true)
             
             while !atEOF
             {
@@ -158,21 +158,21 @@ public class StreamReader
                 }
                 else
                 {
-                    if beginByte == buffer.length
+                    if beginByte == buffer.count
                     {
                         beginByte = 0
                         
-                        buffer = fileHandle!.readDataOfLength( bufferSize )
-                        if buffer.length == 0
+                        buffer = fileHandle!.readData( ofLength: bufferSize )
+                        if buffer.count == 0
                         {
                             atEOF = true
                             break
                         }
                     }
                     
-                    chars = UnsafePointer<UInt8>(buffer.bytes)
+                    chars = (buffer as NSData).bytes.bindMemory(to: UInt8.self, capacity: buffer.count)
                     
-                    while beginByte < buffer.length
+                    while beginByte < buffer.count
                     {
                         let byte: UInt8 = chars[beginByte]
                         
@@ -226,11 +226,11 @@ public class StreamReader
     
     /// Reposition the text file to the begining.
     /// - Returns: void
-    public func rewind() -> Void
+    open func rewind() -> Void
     {
         if fileHandle != nil
         {
-            fileHandle!.seekToFileOffset(0)
+            fileHandle!.seek(toFileOffset: 0)
             lineIndex = 0
             atEOF = false
         }
@@ -238,7 +238,7 @@ public class StreamReader
     
     /// Close the file.
     /// - Returns: void
-    public func close() -> Void
+    open func close() -> Void
     {
         if fileHandle != nil
         {
