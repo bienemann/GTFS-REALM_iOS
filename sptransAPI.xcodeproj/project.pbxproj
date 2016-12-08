@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */; };
 		03E927DF1D519BB800BBAF06 /* GTFSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E927DE1D519BB800BBAF06 /* GTFSManager.swift */; };
+		1D353EC11DF87EF50009E4F0 /* GTFSTripPlannerNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D353EC01DF87EF50009E4F0 /* GTFSTripPlannerNode.swift */; };
 		1D3E1ABB1D5E60E20035F841 /* GTFSMapUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3E1ABA1D5E60E20035F841 /* GTFSMapUtilities.swift */; };
 		1D3E1ABD1D5E61880035F841 /* GTFSQueryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3E1ABC1D5E61880035F841 /* GTFSQueryManager.swift */; };
 		1D7C20891D4FDFFC003CC408 /* GTFSAgency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */; };
@@ -28,6 +29,7 @@
 		1DC24C2F1D4BD8A300ADF874 /* sptransAPIUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC24C2E1D4BD8A300ADF874 /* sptransAPIUITests.swift */; };
 		1DC7EB371D55007B00254EDE /* TextFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC7EB361D55007B00254EDE /* TextFile.swift */; };
 		1DC7EB391D55009700254EDE /* CSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC7EB381D55009700254EDE /* CSVParser.swift */; };
+		1DE573EE1DF734670074D243 /* GTFSTripPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE573ED1DF734670074D243 /* GTFSTripPlanner.swift */; };
 		1DEAD3BD1D5109EC006560F3 /* GTFSTrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3BC1D5109EC006560F3 /* GTFSTrip.swift */; };
 		1DEAD3BF1D510B93006560F3 /* GTFSFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3BE1D510B93006560F3 /* GTFSFrequency.swift */; };
 		1DEAD3C11D510CAE006560F3 /* GTFSCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAD3C01D510CAE006560F3 /* GTFSCalendar.swift */; };
@@ -63,6 +65,7 @@
 /* Begin PBXFileReference section */
 		0310709D1D4C43320020F417 /* TesteLinhaViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TesteLinhaViewController.swift; sourceTree = "<group>"; };
 		03E927DE1D519BB800BBAF06 /* GTFSManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSManager.swift; sourceTree = "<group>"; };
+		1D353EC01DF87EF50009E4F0 /* GTFSTripPlannerNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSTripPlannerNode.swift; sourceTree = "<group>"; };
 		1D3E1ABA1D5E60E20035F841 /* GTFSMapUtilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSMapUtilities.swift; sourceTree = "<group>"; };
 		1D3E1ABC1D5E61880035F841 /* GTFSQueryManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSQueryManager.swift; sourceTree = "<group>"; };
 		1D7C20881D4FDFFC003CC408 /* GTFSAgency.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSAgency.swift; sourceTree = "<group>"; };
@@ -88,6 +91,7 @@
 		1DC24C301D4BD8A300ADF874 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1DC7EB361D55007B00254EDE /* TextFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextFile.swift; sourceTree = "<group>"; };
 		1DC7EB381D55009700254EDE /* CSVParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CSVParser.swift; sourceTree = "<group>"; };
+		1DE573ED1DF734670074D243 /* GTFSTripPlanner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSTripPlanner.swift; sourceTree = "<group>"; };
 		1DEAD3BC1D5109EC006560F3 /* GTFSTrip.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSTrip.swift; sourceTree = "<group>"; };
 		1DEAD3BE1D510B93006560F3 /* GTFSFrequency.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSFrequency.swift; sourceTree = "<group>"; };
 		1DEAD3C01D510CAE006560F3 /* GTFSCalendar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GTFSCalendar.swift; sourceTree = "<group>"; };
@@ -185,6 +189,8 @@
 				1D3E1ABC1D5E61880035F841 /* GTFSQueryManager.swift */,
 				1D3E1ABA1D5E60E20035F841 /* GTFSMapUtilities.swift */,
 				1DFB3AEC1D79C51E00A7E659 /* GTFSExtensions.swift */,
+				1DE573ED1DF734670074D243 /* GTFSTripPlanner.swift */,
+				1D353EC01DF87EF50009E4F0 /* GTFSTripPlannerNode.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -570,10 +576,12 @@
 				1DEAD3BF1D510B93006560F3 /* GTFSFrequency.swift in Sources */,
 				1DC24C111D4BD8A300ADF874 /* ViewController.swift in Sources */,
 				1DEAD3C91D5110AE006560F3 /* GTFSStop.swift in Sources */,
+				1D353EC11DF87EF50009E4F0 /* GTFSTripPlannerNode.swift in Sources */,
 				1DC7EB391D55009700254EDE /* CSVParser.swift in Sources */,
 				0310709E1D4C43320020F417 /* TesteLinhaViewController.swift in Sources */,
 				1DC7EB371D55007B00254EDE /* TextFile.swift in Sources */,
 				1DEAD3C71D510F54006560F3 /* GTFSStopTime.swift in Sources */,
+				1DE573EE1DF734670074D243 /* GTFSTripPlanner.swift in Sources */,
 				1D7C208B1D4FE238003CC408 /* GTFSRoute.swift in Sources */,
 				1DEAD3C31D510D63006560F3 /* GTFSCalendarDates.swift in Sources */,
 				1DEAD3CB1D5111D4006560F3 /* GTFSTransfer.swift in Sources */,

@@ -80,22 +80,86 @@ extension CLLocation {
 }
 
 extension GTFSStop {
+    
     func distanceToLocation(_ location: CLLocation) -> Double {
         let stopLocation = CLLocation(latitude: self.stop_lat, longitude: self.stop_lon)
         return stopLocation.distance(from: location)
     }
+    
+    func servicingTrips() -> Results<GTFSTrip> {
+        
+        let realm = try! Realm()
+        let sTimes = realm.objects(GTFSStopTime.self).filter("stop_id == %@", self.stop_id)
+        let trips = realm.objects(GTFSTrip.self).filter("trip_id IN %@", sTimes.value(forKey: "trip_id")!)
+        return trips
+        
+    }
+    
+    func isBefore(_ stop : GTFSStop, inTrip trip : GTFSTrip, forwardTrip reverse : Bool) -> Bool {
+        
+        let stopTimes = trip.stopTimes()
+        let refSequence = stopTimes.filter("stop_id == %@", stop.stop_id).first!.stop_sequence
+        let selfSequence = stopTimes.filter("stop_id == %@", self.stop_id).first!.stop_sequence
+        
+        return reverse ? selfSequence > refSequence : selfSequence < refSequence
+        
+    }
 }
+
+extension GTFSTrip {
+    
+    func stopTimes() -> Results<GTFSStopTime> {
+        let realm = try! Realm()
+        return realm.objects(GTFSStopTime.self)
+            .filter("trip_id IN %@", self.value(forKey: "trip_id"))
+    }
+    
+    func stops() -> Results<GTFSStop> {
+        let realm = try! Realm()
+        return realm.objects(GTFSStop.self)
+            .filter("stop_id IN %@", self.stopTimes().value(forKey: "stop_id")!)
+            .sorted(byProperty: "stop_sequence", ascending: true)
+    }
+    
+    func stopFrom(_ stop : GTFSStop, next isNext : Bool) -> GTFSStop? {
+        
+        let stops = self.stopTimes()
+        
+        guard let stopTime = stops.filter("stop_id == %@", stop.stop_id).first else {
+            return nil
+        }
+        
+        var sequence : Int
+        if isNext {
+            sequence = stopTime.stop_sequence+1
+        }else{
+            sequence = stopTime.stop_sequence-1
+        }
+        
+        guard let next = stops.filter("stop_sequence == %@", sequence).first else {
+            return nil
+        }
+        
+        let realm = try! Realm()
+        return realm.objects(GTFSStop.self).filter("stop_id == %@", next.stop_id).first
+    }
+    
+    func nextStopFrom(_ stop : GTFSStop) -> GTFSStop? {
+        return self.stopFrom(stop, next: true)
+    }
+    
+    func previousStopFrom(_ stop : GTFSStop) -> GTFSStop? {
+        return self.stopFrom(stop, next: false)
+    }
+}
+
 
 extension Results where T:GTFSStop {
     
     func tripsForStops() -> Results<GTFSTrip>{
         let realm = try! Realm()
         let stopTimes = realm.objects(GTFSStopTime.self).filter("stop_id IN %@", self.value(forKey: "stop_id")!)
-        var IDTrips = Set<String>()
-        for st in stopTimes {
-            IDTrips.insert(st.trip_id)
-        }
-        return realm.objects(GTFSTrip.self).filter("trip_id IN %@", IDTrips)
+        return realm.objects(GTFSTrip.self).filter("trip_id IN %@", stopTimes.value(forKey: "trip_id")!)
     }
     
     func closestStopFromLocation(_ location : CLLocation) -> GTFSStop {
@@ -110,6 +174,29 @@ extension Results where T:GTFSStop {
             }
         }
         return closestStop
+    }
+    
+    func filterWithinDistance(_ distance : Float, fromLocation location : CLLocation)
+        -> Results<GTFSStop> {
+            
+            let (maxLat, minLat, maxLon, minLon) = location.boundingBoxForRadius(distance)
+            let realm = try! Realm()
+            let preFilter = realm.objects(GTFSStop.self)
+                .filter("stop_lat BETWEEN {%f, %f} AND stop_lon BETWEEN {%f, %f}",
+                        minLat, maxLat, minLon, maxLon)
+            
+            var finalFilter = Set<Int>()
+            for stop in preFilter {
+                let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
+                let current = stopLocation.distance(from: location)
+                let max = CLLocationDistance(distance)
+                if current <= max {
+                    finalFilter.insert(stop.stop_id)
+                }
+            }
+            
+            let finalResult = preFilter.filter("stop_id IN %@", finalFilter)
+            return finalResult
     }
 }
 

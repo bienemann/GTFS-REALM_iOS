@@ -24,6 +24,18 @@ class GTFSStop: GTFSBaseModel {
     dynamic var stop_timezone : String? = nil
     let wheelchair_boarding = RealmOptional<Int>()
     
+    //Search related properties
+    var previous : GTFSStop?
+    var possibleNext = Set<GTFSStop>()
+    private var parentTrips : Results<GTFSTrip>!
+    
+    lazy var trips : Results<GTFSTrip> = {
+        if self.parentTrips != nil {
+            self.parentTrips = self.servicingTrips()
+        }
+        return self.parentTrips
+    }()
+    
     override static func primaryKey() -> String? {
         return "stop_id"
     }
@@ -43,9 +55,13 @@ class GTFSStop: GTFSBaseModel {
         }
     }
     
-// Specify properties to ignore (Realm won't persist these)
+  override static func ignoredProperties() -> [String] {
+    return [
+        "previous",
+        "possibleNext",
+        "parentTrips",
+        "trips"
+    ]
+  }
     
-//  override static func ignoredProperties() -> [String] {
-//    return []
-//  }
 }

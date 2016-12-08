@@ -141,6 +141,7 @@ class TestMapViewController: UIViewController, MKMapViewDelegate, CLLocationMana
     func checkGeocoding() {
         if self.fPlacemarks.count > 0{
             if self.sPlacemarks.count > 0 {
+                GTFSTripPlanner.searchFrom(fPlacemarks.first!.location!, to: sPlacemarks.first!.location!)
                 self.showTripsOnMap(fPlacemarks.first!.location!, secondLocation: sPlacemarks.first!.location!)
             }else{
                 self.showTripsOnMap(fPlacemarks.first!.location!)
