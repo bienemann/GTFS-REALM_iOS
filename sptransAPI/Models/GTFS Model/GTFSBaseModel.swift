@@ -12,9 +12,9 @@ import RealmSwift
 
 open class GTFSBaseModel: Object {
     
-    required public init(values: Array<AnyObject>, keys: Array<String>, typecast:((String, AnyObject)->AnyObject)){
+    required public init(values: Array<Any>, keys: Array<String>, typecast:((String, Any)->Any)){
         
-        var d = Dictionary<String, AnyObject>()
+        var d = Dictionary<String, Any>()
         for (index,key) in keys.enumerated() {
             d.updateValue(typecast(key, values[index]), forKey: key)
         }
@@ -33,7 +33,7 @@ open class GTFSBaseModel: Object {
         fatalError("init(value:schema:) has not been implemented")
     }
     
-    class func typecast() -> ((String, AnyObject)->AnyObject) {
+    class func typecast() -> ((String, Any)->Any) {
         return { (_,value) in
             return value
         }

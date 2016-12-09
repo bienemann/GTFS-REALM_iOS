@@ -23,12 +23,12 @@ class GTFSCalendar: GTFSBaseModel {
     dynamic var start_date : String = ""
     dynamic var end_date : String = ""
     
-    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+    override class func typecast() -> ((String, Any) -> Any) {
         return { (key,value) in
             
             if key == "end_date" {
                 if value is NSNumber {
-                    return value.stringValue! as AnyObject
+                    return (value as! NSNumber).stringValue
                 }
             }
             
@@ -41,7 +41,7 @@ class GTFSCalendar: GTFSBaseModel {
                 key == "sunday" {
                 
                 if value is NSNumber {
-                    return value.boolValue! as AnyObject
+                    return (value as! NSNumber).boolValue
                 }
                 
             }

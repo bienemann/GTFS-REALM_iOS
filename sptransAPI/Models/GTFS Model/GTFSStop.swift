@@ -30,7 +30,7 @@ class GTFSStop: GTFSBaseModel {
     private var parentTrips : Results<GTFSTrip>!
     
     lazy var trips : Results<GTFSTrip> = {
-        if self.parentTrips != nil {
+        if self.parentTrips == nil {
             self.parentTrips = self.servicingTrips()
         }
         return self.parentTrips
@@ -40,13 +40,13 @@ class GTFSStop: GTFSBaseModel {
         return "stop_id"
     }
     
-    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+    override class func typecast() -> ((String, Any) -> Any) {
         return { (key,value) in
             
             switch key {
             case "stop_id":
                 if value is NSNumber {
-                    return value.int64Value! as AnyObject
+                    return value
                 }else{ return value }
             default:
                 return value

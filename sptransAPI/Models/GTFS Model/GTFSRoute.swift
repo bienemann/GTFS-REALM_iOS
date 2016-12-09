@@ -25,13 +25,13 @@ class GTFSRoute: GTFSBaseModel {
         return "route_id"
     }
     
-    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+    override class func typecast() -> ((String, Any) -> Any) {
         return { (key,value) in
             
             switch key {
             case "route_type":
                 if value is NSNumber {
-                    return value.int64Value! as AnyObject
+                    return value
                 }else{ return value }
             default:
                 return value

@@ -43,9 +43,9 @@ open class CSVParser: NSObject
     
     open var converterClosure : (([String], [AnyObject]) -> GTFSBaseModel?)?
 
-    open var doBeforeLine: ((CSVParser, [AnyObject]) -> Void)?
-    open var doWhileProcessingLine: ((CSVParser, [AnyObject]) -> Void)?
-    open var doAfterLine: ((CSVParser, [AnyObject]) -> Void)?
+    open var doBeforeLine: ((CSVParser, [Any]) -> Void)?
+    open var doWhileProcessingLine: ((CSVParser, [Any]) -> Void)?
+    open var doAfterLine: ((CSVParser, [Any]) -> Void)?
     
     /// The current line number being processed in the CSV file
     open var lineCount = 0
@@ -66,7 +66,7 @@ open class CSVParser: NSObject
     
     fileprivate var startClosure : ((CSVParser)->Void)?
     fileprivate var endClosure : ((CSVParser)->Void)?
-    fileprivate var readLineClosure : ((CSVParser, Array<AnyObject>) -> Void)?
+    fileprivate var readLineClosure : ((CSVParser, Array<Any>) -> Void)?
     
     fileprivate let csvTab: UInt32		= 0x09
     fileprivate let csvSpace: UInt32	= 0x20
@@ -83,7 +83,7 @@ open class CSVParser: NSObject
     public init(path: String, structure: Bool = false,
                 didStartDocument: ((CSVParser)->Void)? = nil,
                 didEndDocument: ((CSVParser)->Void)? = nil,
-                didReadLine: ((CSVParser, Array<AnyObject>) -> Void)? = nil){
+                didReadLine: ((CSVParser, Array<Any>) -> Void)? = nil){
         
         self.csvFile = TextFile(path: path)
         self.delimiter = ""
@@ -168,11 +168,11 @@ open class CSVParser: NSObject
         return components
     }
     
-    fileprivate func parse(_ line: String) -> [AnyObject]
+    fileprivate func parse(_ line: String) -> [Any]
     {
         //		print( "\n\(line)")
         
-        var components = [AnyObject]()
+        var components = [Any]()
         var field = ""
         
         entryPos	= 0
@@ -360,11 +360,14 @@ open class CSVParser: NSObject
 
 extension String {
     
-    func numberValue() -> AnyObject {
-        if let n = Double(self) {
-            return NSNumber(value: n as Double)
+    func numberValue() -> Any {
+        if let a = Int(self) {
+            return a
+        }
+        if let b = Double(self) {
+            return b
         }else{
-            return self as AnyObject
+            return self
         }
     }
 

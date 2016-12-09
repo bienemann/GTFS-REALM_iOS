@@ -111,7 +111,7 @@ extension GTFSTrip {
     func stopTimes() -> Results<GTFSStopTime> {
         let realm = try! Realm()
         return realm.objects(GTFSStopTime.self)
-            .filter("trip_id IN %@", self.value(forKey: "trip_id"))
+            .filter("trip_id == %@", self.trip_id)
     }
     
     func stops() -> Results<GTFSStop> {
@@ -181,22 +181,22 @@ extension Results where T:GTFSStop {
             
             let (maxLat, minLat, maxLon, minLon) = location.boundingBoxForRadius(distance)
             let realm = try! Realm()
-            let preFilter = realm.objects(GTFSStop.self)
+            return realm.objects(GTFSStop.self)
                 .filter("stop_lat BETWEEN {%f, %f} AND stop_lon BETWEEN {%f, %f}",
                         minLat, maxLat, minLon, maxLon)
             
-            var finalFilter = Set<Int>()
-            for stop in preFilter {
-                let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
-                let current = stopLocation.distance(from: location)
-                let max = CLLocationDistance(distance)
-                if current <= max {
-                    finalFilter.insert(stop.stop_id)
-                }
-            }
-            
-            let finalResult = preFilter.filter("stop_id IN %@", finalFilter)
-            return finalResult
+//            var finalFilter = Set<Int>()
+//            for stop in preFilter {
+//                let stopLocation = CLLocation(latitude: stop.stop_lat, longitude: stop.stop_lon)
+//                let current = stopLocation.distance(from: location)
+//                let max = CLLocationDistance(distance)
+//                if current <= max {
+//                    finalFilter.insert(stop.stop_id)
+//                }
+//            }
+//            
+//            let finalResult = preFilter.filter("stop_id IN %@", finalFilter)
+//            return finalResult
     }
 }
 

@@ -35,24 +35,24 @@ class GTFSTripPlannerNode: AnyObject, Hashable {
     
     //Hashable
     var hashValue: Int {
-        var hash = 5381
-        if self.parent != nil {
-            hash = hash << ObjectIdentifier(self.parent!).hashValue
-        }
-        for child in self.children {
-            hash = hash << ObjectIdentifier(child).hashValue
-        }
-        if self.stop != nil {
-            hash = hash << ObjectIdentifier(self.stop!).hashValue
-        }
-        
-        hash = hash << ObjectIdentifier(self.location).hashValue
+        var hash = 5381 &* ObjectIdentifier(self.location).hashValue
+        hash = hash << 5
+//        if self.parent != nil {
+//            hash =  hash &* ObjectIdentifier(self.parent!).hashValue
+//        }
+//        for child in self.children {
+//            hash = hash &* ObjectIdentifier(child).hashValue
+//        }
+//        if self.stop != nil {
+//            hash = hash &* ObjectIdentifier(self.stop!).hashValue
+//        }
         
         return hash
     }
     
     static func ==(lhs: GTFSTripPlannerNode, rhs: GTFSTripPlannerNode) -> Bool {
-        return lhs === rhs
+        return lhs.location.coordinate.latitude == rhs.location.coordinate.latitude
+        && lhs.location.coordinate.longitude == rhs.location.coordinate.longitude
     }
 
 }

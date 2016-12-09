@@ -17,14 +17,14 @@ class GTFSShape: GTFSBaseModel {
     dynamic var shape_pt_sequence : Int = -1
     let shape_dist_traveled = RealmOptional<Double>()
     
-    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+    override class func typecast() -> ((String, Any) -> Any) {
         return { (key,value) in
             
             switch key {
             case "shape_id": fallthrough
             case "shape_pt_sequence":
                 if value is NSNumber {
-                    return value.int64Value! as AnyObject
+                    return value
                 }else{ return value }
             default:
                 return value

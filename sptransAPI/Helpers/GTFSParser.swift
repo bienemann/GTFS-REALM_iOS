@@ -26,7 +26,7 @@ class GTFSParser : NSObject{
     #endif
     
     func parseDocument(_ filePath: String,
-                       processValues: @escaping (_ structure: Array<String>, _ line: Array<AnyObject>) -> GTFSBaseModel?,
+                       processValues: @escaping (_ structure: Array<String>, _ line: Array<Any>) -> GTFSBaseModel?,
                        progress: ((Double, Double)->Void)?){
         
         var fileSize : UInt64 = 0
@@ -68,7 +68,7 @@ class GTFSParser : NSObject{
         parser.startReader()
     }
     
-    func parseLine<T:GTFSBaseModel>(_ structure: Array<String>, line: Array<AnyObject>, model: T.Type) -> T?{
+    func parseLine<T:GTFSBaseModel>(_ structure: Array<String>, line: Array<Any>, model: T.Type) -> T?{
         
         if structure.count == line.count {
             return model.init(values: line, keys: structure, typecast: model.typecast())

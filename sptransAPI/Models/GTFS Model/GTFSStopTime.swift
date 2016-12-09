@@ -22,14 +22,14 @@ class GTFSStopTime: GTFSBaseModel {
     let shape_dist_traveled = RealmOptional<Double>()
     let timepoint = RealmOptional<Int>()
     
-    override class func typecast() -> ((String, AnyObject) -> AnyObject) {
+    override class func typecast() -> ((String, Any) -> Any) {
         return { (key,value) in
             
             switch key {
             case "stop_sequence": fallthrough
             case "stop_id":
                 if value is NSNumber {
-                    return value.int64Value! as AnyObject
+                    return value
                 }else{ return value }
             default:
                 return value
