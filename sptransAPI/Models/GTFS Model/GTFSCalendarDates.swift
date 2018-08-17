@@ -11,9 +11,9 @@ import RealmSwift
 
 class GTFSCalendarDates: GTFSBaseModel {
     
-    dynamic var service_id : String = ""
-    dynamic var date : String = ""
-    dynamic var exception_type : Int = 0
+    @objc dynamic var service_id : String = ""
+    @objc dynamic var date : String = ""
+    @objc dynamic var exception_type : Int = 0
     
 // Specify properties to ignore (Realm won't persist these)
     

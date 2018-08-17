@@ -11,9 +11,9 @@ import RealmSwift
 
 class GTFSTransfer: GTFSBaseModel {
     
-    dynamic var from_stop_id : Int = -1
-    dynamic var to_stop_id : Int = -1
-    dynamic var transfer_type : Int = 0
+    @objc dynamic var from_stop_id : Int = -1
+    @objc dynamic var to_stop_id : Int = -1
+    @objc dynamic var transfer_type : Int = 0
     let min_transfer_time = RealmOptional<Int>()
     
 // Specify properties to ignore (Realm won't persist these)

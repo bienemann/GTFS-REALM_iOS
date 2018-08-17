@@ -118,7 +118,7 @@ extension GTFSTrip {
         let realm = try! Realm()
         return realm.objects(GTFSStop.self)
             .filter("stop_id IN %@", self.stopTimes().value(forKey: "stop_id")!)
-            .sorted(byProperty: "stop_sequence", ascending: true)
+            .sorted(byKeyPath: "stop_sequence", ascending: true)
     }
     
     func stopFrom(_ stop : GTFSStop, next isNext : Bool) -> GTFSStop? {
@@ -154,7 +154,7 @@ extension GTFSTrip {
 }
 
 
-extension Results where T:GTFSStop {
+extension Results where Element:GTFSStop {
     
     func tripsForStops() -> Results<GTFSTrip>{
         let realm = try! Realm()
@@ -200,10 +200,10 @@ extension Results where T:GTFSStop {
     }
 }
 
-extension Results where T:GTFSTrip {
+extension Results where Element:GTFSTrip {
     
     func tripsByDirectionBasedOnLocations(start:CLLocation, end:CLLocation)
-        -> Results<T>{
+        -> Results<Element>{
             let realm = try! Realm()
             let stopTimes = realm.objects(GTFSStopTime.self).filter("trip_id IN %@", self.value(forKey: "trip_id")!)
             let stops = realm.objects(GTFSStop.self).filter("stop_id IN %@", stopTimes.value(forKey: "stop_id")!)

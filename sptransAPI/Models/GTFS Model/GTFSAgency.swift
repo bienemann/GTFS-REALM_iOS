@@ -11,14 +11,14 @@ import RealmSwift
 
 class GTFSAgency: GTFSBaseModel {
     
-    dynamic var agency_id : String = ""
-    dynamic var agency_name : String = ""
-    dynamic var agency_url : String = ""
-    dynamic var agency_timezone : String = ""
-    dynamic var agency_lang : String? = nil
-    dynamic var agency_phone : String? = nil
-    dynamic var agency_fare_url : String? = nil
-    dynamic var agency_email : String? = nil
+    @objc dynamic var agency_id : String = ""
+    @objc dynamic var agency_name : String = ""
+    @objc dynamic var agency_url : String = ""
+    @objc dynamic var agency_timezone : String = ""
+    @objc dynamic var agency_lang : String? = nil
+    @objc dynamic var agency_phone : String? = nil
+    @objc dynamic var agency_fare_url : String? = nil
+    @objc dynamic var agency_email : String? = nil
     
     override static func primaryKey() -> String? {
         return "agency_id"

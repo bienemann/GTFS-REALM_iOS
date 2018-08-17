@@ -51,7 +51,7 @@ class GTFSQuery {
         let realm = try! Realm()
         return realm.objects(GTFSShape.self)
             .filter("shape_id == %d", trip.shape_id.value!)
-            .sorted(byProperty: "shape_pt_sequence", ascending: true)
+            .sorted(byKeyPath: "shape_pt_sequence", ascending: true)
     }
     
     //pragma - MARK: Stops
@@ -106,7 +106,7 @@ class GTFSQuery {
         let realm = try! Realm()
         let r = realm.objects(GTFSStopTime.self).filter("trip_id == %@", trip.trip_id)
         if ordered {
-            return r.sorted(byProperty: "stop_sequence", ascending: true)
+            return r.sorted(byKeyPath: "stop_sequence", ascending: true)
         }else{
             return r
         }
@@ -123,8 +123,8 @@ class GTFSQuery {
         //and organizes shapes by their route order
         let realm = try! Realm()
         let shapes = Array(realm.objects(GTFSShape.self)
-            .sorted(byProperty: "shape_pt_sequence", ascending: true)
-            .sorted(byProperty: "shape_id"))
+            .sorted(byKeyPath: "shape_pt_sequence", ascending: true)
+            .sorted(byKeyPath: "shape_id"))
         
         //Further filtering the returned shapes, testing if the lines they form intersect
         //with the radius we defined.

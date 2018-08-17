@@ -11,11 +11,11 @@ import RealmSwift
 
 class GTFSFareAttribute: GTFSBaseModel {
     
-    dynamic var fare_id : String = ""
-    dynamic var price : Double = 0.0
-    dynamic var currency_type : String = ""
-    dynamic var payment_method : Int = 999
-    dynamic var transfers : String = ""
+    @objc dynamic var fare_id : String = ""
+    @objc dynamic var price : Double = 0.0
+    @objc dynamic var currency_type : String = ""
+    @objc dynamic var payment_method : Int = 999
+    @objc dynamic var transfers : String = ""
     var transfer_duration = RealmOptional<Int>()
     
     override static func primaryKey() -> String? {
@@ -28,9 +28,9 @@ class GTFSFareAttribute: GTFSBaseModel {
             switch key {
             case "transfer_duration": fallthrough
             case "payment_method":
-                if value is NSNumber {
-                    return value
-                }else{ return value }
+                return Int(value as! String)
+            case "price":
+                return Double(value as! String)
             default:
                 return value
             }

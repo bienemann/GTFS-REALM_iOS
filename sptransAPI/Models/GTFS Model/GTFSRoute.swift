@@ -11,15 +11,15 @@ import RealmSwift
 
 class GTFSRoute: GTFSBaseModel {
     
-    dynamic var route_id : String = ""
-    dynamic var agency_id : String? = nil
-    dynamic var route_short_name : String = ""
-    dynamic var route_long_name : String = ""
-    dynamic var route_desc : String? = nil
-    dynamic var route_type : Int = 999
-    dynamic var route_url : String? = nil
-    dynamic var route_color : String? = nil
-    dynamic var route_text_color : String? = nil
+    @objc dynamic var route_id : String = ""
+    @objc dynamic var agency_id : String? = nil
+    @objc dynamic var route_short_name : String = ""
+    @objc dynamic var route_long_name : String = ""
+    @objc dynamic var route_desc : String? = nil
+    @objc dynamic var route_type : Int = 999
+    @objc dynamic var route_url : String? = nil
+    @objc dynamic var route_color : String? = nil
+    @objc dynamic var route_text_color : String? = nil
     
     override static func primaryKey() -> String? {
         return "route_id"
@@ -30,9 +30,7 @@ class GTFSRoute: GTFSBaseModel {
             
             switch key {
             case "route_type":
-                if value is NSNumber {
-                    return value
-                }else{ return value }
+                return Int(value as! String)
             default:
                 return value
             }

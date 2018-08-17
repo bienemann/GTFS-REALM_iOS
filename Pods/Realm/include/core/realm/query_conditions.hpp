@@ -63,6 +63,10 @@ struct Contains : public HackClass {
     {
         return v2.contains(v1);
     }
+    bool operator()(StringData v1, const std::array<uint8_t, 256> &charmap, StringData v2) const
+    {
+        return v2.contains(v1, charmap);
+    }
 
     template <class A, class B>
     bool operator()(A, B) const
@@ -80,6 +84,62 @@ struct Contains : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+
+    static std::string description()
+    {
+        return "CONTAINS";
+    }
+
+    static const int condition = -1;
+};
+
+// Does v2 contain something like v1 (wildcard matching)?
+struct Like : public HackClass {
+    bool operator()(StringData v1, const char*, const char*, StringData v2, bool = false, bool = false) const
+    {
+        return v2.like(v1);
+    }
+    bool operator()(BinaryData b1, const char*, const char*, BinaryData b2, bool = false, bool = false) const
+    {
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+        return s2.like(s1);
+    }
+    bool operator()(StringData v1, StringData v2, bool = false, bool = false) const
+    {
+        return v2.like(v1);
+    }
+    bool operator()(BinaryData b1, BinaryData b2, bool = false, bool = false) const
+    {
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+        return s2.like(s1);
+    }
+
+    template <class A, class B>
+    bool operator()(A, B) const
+    {
+        REALM_ASSERT(false);
+        return false;
+    }
+
+    template <class A, class B, class C, class D>
+    bool operator()(A, B, C, D) const
+    {
+        REALM_ASSERT(false);
+        return false;
+    }
+
+    bool operator()(int64_t, int64_t, bool, bool) const
+    {
+        REALM_ASSERT(false);
+        return false;
+    }
+
+    static std::string description()
+    {
+        return "LIKE";
     }
 
     static const int condition = -1;
@@ -113,6 +173,11 @@ struct BeginsWith : public HackClass {
         return false;
     }
 
+    static std::string description()
+    {
+        return "BEGINSWITH";
+    }
+
     static const int condition = -1;
 };
 
@@ -144,6 +209,11 @@ struct EndsWith : public HackClass {
         return false;
     }
 
+    static std::string description()
+    {
+        return "ENDSWITH";
+    }
+
     static const int condition = -1;
 };
 
@@ -173,6 +243,11 @@ struct Equal {
     bool will_match(int64_t v, int64_t lbound, int64_t ubound)
     {
         return (v == 0 && ubound == 0 && lbound == 0);
+    }
+
+    static std::string description()
+    {
+        return "==";
     }
 };
 
@@ -212,6 +287,11 @@ struct NotEqual {
         REALM_ASSERT(false);
         return false;
     }
+
+    static std::string description()
+    {
+        return "!=";
+    }
 };
 
 // Does v2 contain v1?
@@ -241,6 +321,25 @@ struct ContainsIns : public HackClass {
         std::string v1_lower = case_map(v1, false, IgnoreErrors);
         return search_case_fold(v2, v1_upper.c_str(), v1_lower.c_str(), v1.size()) != v2.size();
     }
+    bool operator()(BinaryData b1, BinaryData b2, bool = false, bool = false) const
+    {
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+        return this->operator()(s1, s2, false, false);
+    }
+    
+    // Case insensitive Boyer-Moore version
+    bool operator()(StringData v1, const char* v1_upper, const char* v1_lower, const std::array<uint8_t, 256> &charmap, StringData v2) const
+    {
+        if (v2.is_null() && !v1.is_null())
+            return false;
+        
+        if (v1.size() == 0 && !v2.is_null())
+            return true;
+        
+        return contains_ins(v2, v1_upper, v1_lower, v1.size(), charmap);
+    }
+
 
     template <class A, class B>
     bool operator()(A, B) const
@@ -258,6 +357,83 @@ struct ContainsIns : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+
+    static std::string description()
+    {
+        return "CONTAINS[c]";
+    }
+
+    static const int condition = -1;
+};
+
+// Does v2 contain something like v1 (wildcard matching)?
+struct LikeIns : public HackClass {
+    bool operator()(StringData v1, const char* v1_upper, const char* v1_lower, StringData v2, bool = false,
+                    bool = false) const
+    {
+        if (v2.is_null() || v1.is_null()) {
+            return (v2.is_null() && v1.is_null());
+        }
+
+        return string_like_ins(v2, v1_lower, v1_upper);
+    }
+    bool operator()(BinaryData b1, const char* b1_upper, const char* b1_lower, BinaryData b2, bool = false,
+                    bool = false) const
+    {
+        if (b2.is_null() || b1.is_null()) {
+            return (b2.is_null() && b1.is_null());
+        }
+        StringData s2(b2.data(), b2.size());
+
+        return string_like_ins(s2, b1_lower, b1_upper);
+    }
+
+    // Slow version, used if caller hasn't stored an upper and lower case version
+    bool operator()(StringData v1, StringData v2, bool = false, bool = false) const
+    {
+        if (v2.is_null() || v1.is_null()) {
+            return (v2.is_null() && v1.is_null());
+        }
+
+        std::string v1_upper = case_map(v1, true, IgnoreErrors);
+        std::string v1_lower = case_map(v1, false, IgnoreErrors);
+        return string_like_ins(v2, v1_lower, v1_upper);
+    }
+    bool operator()(BinaryData b1, BinaryData b2, bool = false, bool = false) const
+    {
+        if (b2.is_null() || b1.is_null()) {
+            return (b2.is_null() && b1.is_null());
+        }
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+
+        std::string s1_upper = case_map(s1, true, IgnoreErrors);
+        std::string s1_lower = case_map(s1, false, IgnoreErrors);
+        return string_like_ins(s2, s1_lower, s1_upper);
+    }
+
+    template <class A, class B>
+    bool operator()(A, B) const
+    {
+        REALM_ASSERT(false);
+        return false;
+    }
+    template <class A, class B, class C, class D>
+    bool operator()(A, B, C, D) const
+    {
+        REALM_ASSERT(false);
+        return false;
+    }
+    bool operator()(int64_t, int64_t, bool, bool) const
+    {
+        REALM_ASSERT(false);
+        return false;
+    }
+
+    static std::string description()
+    {
+        return "LIKE[c]";
     }
 
     static const int condition = -1;
@@ -285,6 +461,12 @@ struct BeginsWithIns : public HackClass {
         std::string v1_lower = case_map(v1, false, IgnoreErrors);
         return equal_case_fold(v2.prefix(v1.size()), v1_upper.c_str(), v1_lower.c_str());
     }
+    bool operator()(BinaryData b1, BinaryData b2, bool = false, bool = false) const
+    {
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+        return this->operator()(s1, s2, false, false);
+    }
 
     template <class A, class B>
     bool operator()(A, B) const
@@ -302,6 +484,11 @@ struct BeginsWithIns : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+
+    static std::string description()
+    {
+        return "BEGINSWITH[c]";
     }
 
     static const int condition = -1;
@@ -330,6 +517,12 @@ struct EndsWithIns : public HackClass {
         std::string v1_lower = case_map(v1, false, IgnoreErrors);
         return equal_case_fold(v2.suffix(v1.size()), v1_upper.c_str(), v1_lower.c_str());
     }
+    bool operator()(BinaryData b1, BinaryData b2, bool = false, bool = false) const
+    {
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+        return this->operator()(s1, s2, false, false);
+    }
 
     template <class A, class B>
     bool operator()(A, B) const
@@ -347,6 +540,11 @@ struct EndsWithIns : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+
+    static std::string description()
+    {
+        return "ENDSWITH[c]";
     }
 
     static const int condition = -1;
@@ -374,6 +572,12 @@ struct EqualIns : public HackClass {
         std::string v1_lower = case_map(v1, false, IgnoreErrors);
         return equal_case_fold(v2, v1_upper.c_str(), v1_lower.c_str());
     }
+    bool operator()(BinaryData b1, BinaryData b2, bool = false, bool = false) const
+    {
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+        return this->operator()(s1, s2, false, false);
+    }
 
     template <class A, class B>
     bool operator()(A, B) const
@@ -391,6 +595,11 @@ struct EqualIns : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+
+    static std::string description()
+    {
+        return "==[c]";
     }
 
     static const int condition = -1;
@@ -417,6 +626,12 @@ struct NotEqualIns : public HackClass {
         std::string v1_lower = case_map(v1, false, IgnoreErrors);
         return !equal_case_fold(v2, v1_upper.c_str(), v1_lower.c_str());
     }
+    bool operator()(BinaryData b1, BinaryData b2, bool = false, bool = false) const
+    {
+        StringData s1(b1.data(), b1.size());
+        StringData s2(b2.data(), b2.size());
+        return this->operator()(s1, s2, false, false);
+    }
 
     template <class A, class B>
     bool operator()(A, B) const
@@ -429,6 +644,11 @@ struct NotEqualIns : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+
+    static std::string description()
+    {
+        return "!=[c]";
     }
 
     static const int condition = -1;
@@ -462,6 +682,11 @@ struct Greater {
         static_cast<void>(ubound);
         return lbound > v;
     }
+
+    static std::string description()
+    {
+        return ">";
+    }
 };
 
 struct None {
@@ -491,6 +716,11 @@ struct None {
         static_cast<void>(v);
         return true;
     }
+
+    static std::string description()
+    {
+        return "none";
+    }
 };
 
 struct NotNull {
@@ -519,6 +749,10 @@ struct NotNull {
         static_cast<void>(ubound);
         static_cast<void>(v);
         return true;
+    }
+    static std::string description()
+    {
+        return "!= NULL";
     }
 };
 
@@ -550,6 +784,10 @@ struct Less {
         static_cast<void>(lbound);
         return ubound < v;
     }
+    static std::string description()
+    {
+        return "<";
+    }
 };
 
 struct LessEqual : public HackClass {
@@ -567,6 +805,10 @@ struct LessEqual : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+    static std::string description()
+    {
+        return "<=";
     }
     static const int condition = -1;
 };
@@ -586,6 +828,10 @@ struct GreaterEqual : public HackClass {
     {
         REALM_ASSERT(false);
         return false;
+    }
+    static std::string description()
+    {
+        return ">=";
     }
     static const int condition = -1;
 };

@@ -11,12 +11,12 @@ import RealmSwift
 
 class GTFSStopTime: GTFSBaseModel {
     
-    dynamic var trip_id : String = ""
-    dynamic var arrival_time : String = ""
-    dynamic var departure_time : String = ""
-    dynamic var stop_id : Int = -1
-    dynamic var stop_sequence : Int = -1
-    dynamic var stop_headsign : String? = nil
+    @objc dynamic var trip_id : String = ""
+    @objc dynamic var arrival_time : String = ""
+    @objc dynamic var departure_time : String = ""
+    @objc dynamic var stop_id : Int = -1
+    @objc dynamic var stop_sequence : Int = -1
+    @objc dynamic var stop_headsign : String? = nil
     let pickup_type = RealmOptional<Int>()
     let drop_off_type = RealmOptional<Int>()
     let shape_dist_traveled = RealmOptional<Double>()
@@ -27,10 +27,13 @@ class GTFSStopTime: GTFSBaseModel {
             
             switch key {
             case "stop_sequence": fallthrough
-            case "stop_id":
-                if value is NSNumber {
-                    return value
-                }else{ return value }
+            case "stop_id": fallthrough
+            case "pickup_type": fallthrough
+            case "drop_off_type": fallthrough
+            case "timepoint":
+                return Int(value as! String)
+            case "shape_dist_traveled":
+                return Double(value as! String)
             default:
                 return value
             }

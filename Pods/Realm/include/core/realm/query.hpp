@@ -42,6 +42,7 @@
 #include <realm/link_view_fwd.hpp>
 #include <realm/descriptor_fwd.hpp>
 #include <realm/row.hpp>
+#include <realm/util/serializer.hpp>
 
 namespace realm {
 
@@ -56,6 +57,10 @@ class Array;
 class Expression;
 class SequentialGetterBase;
 class Group;
+
+namespace metrics {
+class QueryInfo;
+}
 
 struct QueryGroup {
     enum class State {
@@ -171,6 +176,15 @@ public:
     Query& less_equal(size_t column_ndx, Timestamp value);
     Query& less(size_t column_ndx, Timestamp value);
 
+    // Conditions: size
+    Query& size_equal(size_t column_ndx, int64_t value);
+    Query& size_not_equal(size_t column_ndx, int64_t value);
+    Query& size_greater(size_t column_ndx, int64_t value);
+    Query& size_greater_equal(size_t column_ndx, int64_t value);
+    Query& size_less_equal(size_t column_ndx, int64_t value);
+    Query& size_less(size_t column_ndx, int64_t value);
+    Query& size_between(size_t column_ndx, int64_t from, int64_t to);
+
     // Conditions: bool
     Query& equal(size_t column_ndx, bool value);
 
@@ -210,6 +224,7 @@ public:
     Query& begins_with(size_t column_ndx, StringData value, bool case_sensitive = true);
     Query& ends_with(size_t column_ndx, StringData value, bool case_sensitive = true);
     Query& contains(size_t column_ndx, StringData value, bool case_sensitive = true);
+    Query& like(size_t column_ndx, StringData value, bool case_sensitive = true);
 
     // These are shortcuts for equal(StringData(c_str)) and
     // not_equal(StringData(c_str)), and are needed to avoid unwanted
@@ -218,11 +233,12 @@ public:
     Query& not_equal(size_t column_ndx, const char* c_str, bool case_sensitive = true);
 
     // Conditions: binary data
-    Query& equal(size_t column_ndx, BinaryData value);
-    Query& not_equal(size_t column_ndx, BinaryData value);
-    Query& begins_with(size_t column_ndx, BinaryData value);
-    Query& ends_with(size_t column_ndx, BinaryData value);
-    Query& contains(size_t column_ndx, BinaryData value);
+    Query& equal(size_t column_ndx, BinaryData value, bool case_sensitive = true);
+    Query& not_equal(size_t column_ndx, BinaryData value, bool case_sensitive = true);
+    Query& begins_with(size_t column_ndx, BinaryData value, bool case_sensitive = true);
+    Query& ends_with(size_t column_ndx, BinaryData value, bool case_sensitive = true);
+    Query& contains(size_t column_ndx, BinaryData value, bool case_sensitive = true);
+    Query& like(size_t column_ndx, BinaryData b, bool case_sensitive = true);
 
     // Negation
     Query& Not();
@@ -327,6 +343,9 @@ public:
 
     std::string validate();
 
+    std::string get_description() const;
+    std::string get_description(util::serializer::SerialisationState& state) const;
+
 private:
     Query(Table& table, TableViewBase* tv = nullptr);
     void create();
@@ -336,8 +355,6 @@ private:
     size_t peek_tablerow(size_t row) const;
     void handle_pending_not();
     void set_table(TableRef tr);
-
-    static bool comp(const std::pair<size_t, size_t>& a, const std::pair<size_t, size_t>& b);
 
 public:
     using HandoverPatch = QueryHandoverPatch;
@@ -390,6 +407,9 @@ private:
     template <typename TConditionFunction, class T>
     Query& add_condition(size_t column_ndx, T value);
 
+    template <typename TConditionFunction>
+    Query& add_size_condition(size_t column_ndx, int64_t value);
+
     template <typename T, bool Nullable>
     double average(size_t column_ndx, size_t* resultcount = nullptr, size_t start = 0, size_t end = size_t(-1),
                    size_t limit = size_t(-1)) const;
@@ -418,6 +438,7 @@ private:
 
     friend class Table;
     friend class TableViewBase;
+    friend class metrics::QueryInfo;
 
     std::string error_code;
 

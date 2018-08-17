@@ -47,7 +47,6 @@ class GTFSTripPolyline: MKPolyline {
             })
         }
         
-        self.init()
         self.init(coordinates: UnsafeMutablePointer(mutating: coordinates), count: coordinates.count)
         
         self.renderer = self.customLineRenderer(self)

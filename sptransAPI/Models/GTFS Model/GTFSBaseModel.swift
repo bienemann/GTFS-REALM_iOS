@@ -33,7 +33,7 @@ open class GTFSBaseModel: Object {
         fatalError("init(value:schema:) has not been implemented")
     }
     
-    class func typecast() -> ((String, Any)->Any) {
+    class func typecast() -> ((String, Any) -> Any) {
         return { (_,value) in
             return value
         }

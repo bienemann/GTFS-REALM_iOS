@@ -9,7 +9,7 @@
 import UIKit
 import CoreLocation
 
-class GTFSTripPlannerNode: AnyObject, Hashable {
+class GTFSTripPlannerNode: Hashable {
     
     public let parent : GTFSTripPlannerNode? = nil
     public var children : Set<GTFSTripPlannerNode> = []

@@ -11,10 +11,10 @@ import RealmSwift
 
 class GTFSShape: GTFSBaseModel {
     
-    dynamic var shape_id : Int = 0
-    dynamic var shape_pt_lat : Double = 0.0
-    dynamic var shape_pt_lon : Double = 0.0
-    dynamic var shape_pt_sequence : Int = -1
+    @objc dynamic var shape_id : Int = 0
+    @objc dynamic var shape_pt_lat : Double = 0.0
+    @objc dynamic var shape_pt_lon : Double = 0.0
+    @objc dynamic var shape_pt_sequence : Int = -1
     let shape_dist_traveled = RealmOptional<Double>()
     
     override class func typecast() -> ((String, Any) -> Any) {
@@ -23,9 +23,11 @@ class GTFSShape: GTFSBaseModel {
             switch key {
             case "shape_id": fallthrough
             case "shape_pt_sequence":
-                if value is NSNumber {
-                    return value
-                }else{ return value }
+                return Int(value as! String)
+            case "shape_dist_traveled": fallthrough
+            case "shape_pt_lat": fallthrough
+            case "shape_pt_lon":
+                return Double(value as! String)
             default:
                 return value
             }

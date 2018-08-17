@@ -11,17 +11,17 @@ import RealmSwift
 
 class GTFSStop: GTFSBaseModel {
     
-    dynamic var stop_id : Int = -1
-    dynamic var stop_code : String? = nil
-    dynamic var stop_name : String = ""
-    dynamic var stop_desc : String? = nil
-    dynamic var stop_lat : Double = 0.0
-    dynamic var stop_lon : Double = 0.0
-    dynamic var zone_id : String? = nil
-    dynamic var stop_url : String? = nil
+    @objc dynamic var stop_id : Int = -1
+    @objc dynamic var stop_code : String? = nil
+    @objc dynamic var stop_name : String = ""
+    @objc dynamic var stop_desc : String? = nil
+    @objc dynamic var stop_lat : Double = 0.0
+    @objc dynamic var stop_lon : Double = 0.0
+    @objc dynamic var zone_id : String? = nil
+    @objc dynamic var stop_url : String? = nil
     let location_type = RealmOptional<Int>()
     let parent_station = RealmOptional<Int>()
-    dynamic var stop_timezone : String? = nil
+    @objc dynamic var stop_timezone : String? = nil
     let wheelchair_boarding = RealmOptional<Int>()
     
     //Search related properties
@@ -44,10 +44,11 @@ class GTFSStop: GTFSBaseModel {
         return { (key,value) in
             
             switch key {
-            case "stop_id":
-                if value is NSNumber {
-                    return value
-                }else{ return value }
+//            case "stop_id": fallthrough
+            case "location_type": fallthrough
+            case "parent_station": fallthrough
+            case "wheelchair_boarding":
+                return Int(value as! String)
             default:
                 return value
             }

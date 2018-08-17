@@ -59,10 +59,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         SPTransAPI.shared.authenticate { (result) in
             if result == true {
-                self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.green]
+                self.navigationController?.navigationBar.titleTextAttributes = [NSAttributedStringKey.foregroundColor : UIColor.green]
                 self.navigationItem.title = "Online"
             }else{
-                self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.red]
+                self.navigationController?.navigationBar.titleTextAttributes = [NSAttributedStringKey.foregroundColor : UIColor.red]
                 self.navigationItem.title = "Offline"
             }
         }
@@ -70,7 +70,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         self.navigationItem.title = "Home"
-        self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.black]
+        self.navigationController?.navigationBar.titleTextAttributes = [NSAttributedStringKey.foregroundColor : UIColor.black]
         
     }
 

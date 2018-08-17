@@ -11,13 +11,13 @@ import RealmSwift
 
 class GTFSTrip: GTFSBaseModel {
     
-    dynamic var route_id : String = ""
-    dynamic var service_id : String = ""
-    dynamic var trip_id : String = ""
-    dynamic var trip_headsign : String? = nil
-    dynamic var trip_short_name : String? = nil
+    @objc dynamic var route_id : String = ""
+    @objc dynamic var service_id : String = ""
+    @objc dynamic var trip_id : String = ""
+    @objc dynamic var trip_headsign : String? = nil
+    @objc dynamic var trip_short_name : String? = nil
     let direction_id = RealmOptional<Int>()
-    dynamic var block_id : String? = nil
+    @objc dynamic var block_id : String? = nil
     let shape_id = RealmOptional<Int>()
     let wheelchair_accessible = RealmOptional<Int>()
     let bikes_allowed = RealmOptional<Int>()
@@ -31,10 +31,10 @@ class GTFSTrip: GTFSBaseModel {
             
             switch key {
             case "direction_id": fallthrough
-            case "shape_id":
-                if value is NSNumber {
-                    return value
-                }else{ return value }
+            case "shape_id": fallthrough
+            case "wheelchair_accessible": fallthrough
+            case "bikes_allowed":
+                return Int(value as! String)
             default:
                 return value
             }

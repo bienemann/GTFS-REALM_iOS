@@ -23,21 +23,63 @@
 #include <cstddef>
 #include <memory>
 #include <chrono>
-#include <tuple>
 #include <string>
 #include <system_error>
 #include <ostream>
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
+
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#  include <stdio.h>
+#  include <Ws2def.h>
+#  pragma comment(lib, "Ws2_32.lib")
+#else
+#  include <sys/socket.h>
+#  include <arpa/inet.h>
+#  include <netdb.h>
+#endif
 
 #include <realm/util/features.h>
 #include <realm/util/assert.hpp>
+#include <realm/util/bind_ptr.hpp>
 #include <realm/util/buffer.hpp>
 #include <realm/util/basic_system_errors.hpp>
-#include <realm/util/call_with_tuple.hpp>
+
+// Linux epoll
+//
+// Require Linux kernel version >= 2.6.27 such that we have epoll_create1(),
+// `O_CLOEXEC`, and `EPOLLRDHUP`.
+#if defined(__linux__)
+#  include <linux/version.h>
+#  if !defined(REALM_HAVE_EPOLL)
+#    if !defined(REALM_DISABLE_UTIL_NETWORK_EPOLL)
+#      if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
+#        define REALM_HAVE_EPOLL 1
+#      endif
+#    endif
+#  endif
+#endif
+#if !defined(REALM_HAVE_EPOLL)
+#  define REALM_HAVE_EPOLL 0
+#endif
+
+// FreeBSD Kqueue.
+//
+// Available on Mac OS X, FreeBSD, NetBSD, OpenBSD
+#if (defined(__MACH__) && defined(__APPLE__)) || defined(__FreeBSD__) || \
+    defined(__NetBSD__) || defined(__OpenBSD__)
+#  if !defined(REALM_HAVE_KQUEUE)
+#    if !defined(REALM_DISABLE_UTIL_NETWORK_KQUEUE)
+#      define REALM_HAVE_KQUEUE 1
+#    endif
+#  endif
+#endif
+#if !defined(REALM_HAVE_KQUEUE)
+#  define REALM_HAVE_KQUEUE 0
+#endif
+
 
 
 // FIXME: Unfinished business around `Address::m_ip_v6_scope_id`.
@@ -56,8 +98,8 @@ namespace util {
 ///
 /// A *service context* is a set of objects consisting of an instance of
 /// Service, and all the objects that are associated with that instance (\ref
-/// Resolver, \ref Socket`, \ref Acceptor`, \ref DeadlineTimer, and \ref
-/// ssl::Stream).
+/// Resolver, \ref Socket`, \ref Acceptor`, \ref DeadlineTimer, \ref Trigger,
+/// and \ref ssl::Stream).
 ///
 /// In general, it is unsafe for two threads to call functions on the same
 /// object, or on different objects in the same service context. This also
@@ -72,7 +114,7 @@ namespace util {
 /// thread is allowed to access objects in the same service context (with the
 /// mentioned exceptions).
 ///
-/// Unless otherwise specified, free-staing objects, such as \ref
+/// Unless otherwise specified, free-standing objects, such as \ref
 /// StreamProtocol, \ref Address, \ref Endpoint, and \ref Endpoint::List are
 /// fully thread-safe as long as they are not mutated. If one thread is mutating
 /// such an object, no other thread may access it. Note that these free-standing
@@ -90,15 +132,15 @@ namespace util {
 /// until that point in time. In particular, if `cancel()` is called on a socket
 /// or a deadline timer object before the completion handler starts to execute,
 /// then that operation will be canceled, and will receive
-/// `error::operation_aborted`. This guarantee is possible (and free of
-/// ambiguities) precisely because this library prohibits multiple threads from
-/// executing the event loop concurrently, and because `cancel()` is allowed to
-/// be called only from a completion handler (executed by the event loop thread)
-/// or while no thread is executing the event loop. This guarantee allows for
-/// safe destruction of sockets and deadline timers as long as the completion
-/// handlers react appropriately to `error::operation_aborted`, in particular,
-/// that they do not attempt to access the socket or deadline timer object in
-/// such cases.
+/// `error::operation_aborted`. This guarantee is possible to provide (and free
+/// of ambiguities) precisely because this library prohibits multiple threads
+/// from executing the event loop concurrently, and because `cancel()` is
+/// allowed to be called only from a completion handler (executed by the event
+/// loop thread) or while no thread is executing the event loop. This guarantee
+/// allows for safe destruction of sockets and deadline timers as long as the
+/// completion handlers react appropriately to `error::operation_aborted`, in
+/// particular, that they do not attempt to access the socket or deadline timer
+/// object in such cases.
 ///
 /// ASIO, on the other hand, allows for an asynchronous operation to complete
 /// and become **uncancellable** before the completion handler starts to
@@ -114,7 +156,7 @@ namespace util {
 ///
 /// IMPORTANT: Even if ASIO is used in a way where at most one thread executes
 /// the event loop, there is still no guarantee that an asynchronous operation
-/// remains cancelable up until the point in timer where the completion handler
+/// remains cancelable up until the point in time where the completion handler
 /// starts to execute.
 namespace network {
 
@@ -130,6 +172,7 @@ class SocketBase;
 class Socket;
 class Acceptor;
 class DeadlineTimer;
+class Trigger;
 class ReadAheadBuffer;
 namespace ssl {
 class Stream;
@@ -156,7 +199,7 @@ private:
     int m_socktype;
     int m_protocol;
 
-    friend class Resolver;
+    friend class Service;
     friend class SocketBase;
 };
 
@@ -228,10 +271,10 @@ private:
     };
     sockaddr_union_type m_sockaddr_union;
 
+    friend class Service;
     friend class Resolver;
     friend class SocketBase;
     friend class Socket;
-    friend class Acceptor;
 };
 
 
@@ -240,18 +283,21 @@ class Endpoint::List {
 public:
     using iterator = const Endpoint*;
 
-    iterator begin() const;
-    iterator end() const;
-    std::size_t size() const;
+    iterator begin() const noexcept;
+    iterator end() const noexcept;
+    std::size_t size() const noexcept;
+    bool empty() const noexcept;
 
-    List() = default;
+    List() noexcept = default;
     List(List&&) noexcept = default;
     ~List() noexcept = default;
+
+    List& operator=(List&&) noexcept = default;
 
 private:
     Buffer<Endpoint> m_endpoints;
 
-    friend class Resolver;
+    friend class Service;
 };
 
 
@@ -270,7 +316,7 @@ public:
     /// there are no asynchronous operations in progress, run() returns.
     ///
     /// All completion handlers, including handlers submitted via post() will be
-    /// executed from run(), that is by the thread that executes run(). If no
+    /// executed from run(), that is, by the thread that executes run(). If no
     /// thread executes run(), then the completion handlers will not be
     /// executed.
     ///
@@ -283,16 +329,20 @@ public:
 
     /// @{ \brief Stop event loop execution.
     ///
-    /// stop() puts the event loop into the stopped mode. If a thread is currently
-    /// executing run(), it will be made to return in a timely fashion, that is,
-    /// without further blocking. If a thread is currently blocked in run(), it
-    /// will be unblocked. Handlers that can be executed immediately, may, or
-    /// may not be executed before run() returns, but new handlers submitted by
-    /// these, will not be executed.
+    /// stop() puts the event loop into the stopped mode. If a thread is
+    /// currently executing run(), it will be made to return in a timely
+    /// fashion, that is, without further blocking. If a thread is currently
+    /// blocked in run(), it will be unblocked. Handlers that can be executed
+    /// immediately, may, or may not be executed before run() returns, but new
+    /// handlers submitted by these, will not be executed before run()
+    /// returns. Also, if a handler is submitted by a call to post, and that
+    /// call happens after stop() returns, then that handler is guaranteed to
+    /// not be executed before run() returns (assuming that reset() is not called
+    /// before run() returns).
     ///
     /// The event loop will remain in the stopped mode until reset() is
     /// called. If reset() is called before run() returns, it may, or may not
-    /// cause run() to continue normal operation without returning.
+    /// cause run() to resume normal operation without returning.
     ///
     /// Both stop() and reset() are thread-safe, that is, they may be called by
     /// any thread. Also, both of these function may be called from completion
@@ -326,16 +376,40 @@ public:
     /// before B.
     template<class H> void post(H handler);
 
+    /// Argument `saturation` is the fraction of time that is not spent
+    /// sleeping. Argument `inefficiency` is the fraction of time not spent
+    /// sleeping, and not spent executing completion handlers. Both values are
+    /// guaranteed to always be in the range 0 to 1 (both inclusive). The value
+    /// passed as `inefficiency` is guaranteed to always be less than, or equal
+    /// to the value passed as `saturation`.
+    using EventLoopMetricsHandler = void(double saturation, double inefficiency);
+
+    /// \brief Report event loop metrics via the specified handler.
+    ///
+    /// The handler will be called approximately every 30 seconds.
+    ///
+    /// report_event_loop_metrics() must be called prior to any invocation of
+    /// run(). report_event_loop_metrics() is not thread-safe.
+    ///
+    /// This feature is only available if
+    /// `REALM_UTIL_NETWORK_EVENT_LOOP_METRICS` was defined during
+    /// compilation. When the feature is not available, the specified handler
+    /// will never be called.
+    void report_event_loop_metrics(std::function<EventLoopMetricsHandler>);
+
 private:
     enum class Want { nothing = 0, read, write };
 
+    template<class Oper> class OperQueue;
+    class Descriptor;
     class AsyncOper;
+    class ResolveOperBase;
     class WaitOperBase;
+    class TriggerExecOperBase;
     class PostOperBase;
     template<class H> class PostOper;
     class IoOper;
     class UnusedOper; // Allocated, but currently unused memory
-    template<class Oper> class OperQueue;
 
     template<class S> class BasicStreamOps;
 
@@ -345,42 +419,129 @@ private:
     struct LendersOperDeleter {
         void operator()(AsyncOper*) const noexcept;
     };
-    using OwnersOperPtr      = std::unique_ptr<AsyncOper,    OwnersOperDeleter>;
-    using LendersOperPtr     = std::unique_ptr<AsyncOper,    LendersOperDeleter>;
-    using LendersWaitOperPtr = std::unique_ptr<WaitOperBase, LendersOperDeleter>;
-    using LendersIoOperPtr   = std::unique_ptr<IoOper,       LendersOperDeleter>;
+    using OwnersOperPtr         = std::unique_ptr<AsyncOper,       OwnersOperDeleter>;
+    using LendersOperPtr        = std::unique_ptr<AsyncOper,       LendersOperDeleter>;
+    using LendersResolveOperPtr = std::unique_ptr<ResolveOperBase, LendersOperDeleter>;
+    using LendersWaitOperPtr    = std::unique_ptr<WaitOperBase,    LendersOperDeleter>;
+    using LendersIoOperPtr      = std::unique_ptr<IoOper,          LendersOperDeleter>;
 
+    class IoReactor;
     class Impl;
     const std::unique_ptr<Impl> m_impl;
 
     template<class Oper, class... Args>
     static std::unique_ptr<Oper, LendersOperDeleter> alloc(OwnersOperPtr&, Args&&...);
 
-    template<class Oper> static void execute(std::unique_ptr<Oper, LendersOperDeleter>&);
-
-    template<class Oper, class... Args>
-    static void initiate_io_oper(std::unique_ptr<Oper, LendersOperDeleter>, Args&&...);
-
-    enum io_op { io_op_Read, io_op_Write };
-    void add_io_oper(int fd, LendersIoOperPtr, io_op type);
-    void add_wait_oper(LendersWaitOperPtr);
-    void add_completed_oper(LendersOperPtr) noexcept;
-    void cancel_incomplete_io_ops(int fd) noexcept;
-
     using PostOperConstr = PostOperBase*(void* addr, std::size_t size, Impl&, void* cookie);
     void do_post(PostOperConstr, std::size_t size, void* cookie);
     template<class H>
     static PostOperBase* post_oper_constr(void* addr, std::size_t size, Impl&, void* cookie);
     static void recycle_post_oper(Impl&, PostOperBase*) noexcept;
+    static void trigger_exec(Impl&, TriggerExecOperBase&) noexcept;
+    static void reset_trigger_exec(Impl&, TriggerExecOperBase&) noexcept;
 
     using clock = std::chrono::steady_clock;
 
+    friend class Resolver;
     friend class SocketBase;
     friend class Socket;
     friend class Acceptor;
     friend class DeadlineTimer;
+    friend class Trigger;
     friend class ReadAheadBuffer;
     friend class ssl::Stream;
+};
+
+
+template<class Oper> class Service::OperQueue {
+public:
+    using LendersOperPtr = std::unique_ptr<Oper, LendersOperDeleter>;
+    bool empty() const noexcept;
+    void push_back(LendersOperPtr) noexcept;
+    template<class Oper2> void push_back(OperQueue<Oper2>&) noexcept;
+    LendersOperPtr pop_front() noexcept;
+    void clear() noexcept;
+    OperQueue() noexcept = default;
+    OperQueue(OperQueue&&) noexcept;
+    ~OperQueue() noexcept;
+private:
+    Oper* m_back = nullptr;
+    template<class> friend class OperQueue;
+};
+
+
+class Service::Descriptor {
+public:
+#ifdef _WIN32
+    using native_handle_type = SOCKET;
+#else
+    using native_handle_type = int;
+#endif
+
+    Impl& service_impl;
+
+    Descriptor(Impl& service) noexcept;
+    ~Descriptor() noexcept;
+
+    /// \param in_blocking_mode Must be true if, and only if the passed file
+    /// descriptor refers to a file description in which the file status flag
+    /// O_NONBLOCK is not set.
+    ///
+    /// The passed file descriptor must have the file descriptor flag FD_CLOEXEC
+    /// set.
+    void assign(native_handle_type fd, bool in_blocking_mode) noexcept;
+    void close() noexcept;
+    native_handle_type release() noexcept;
+
+    bool is_open() const noexcept;
+
+    native_handle_type native_handle() const noexcept;
+    bool in_blocking_mode() const noexcept;
+
+    void accept(Descriptor&, StreamProtocol, Endpoint*, std::error_code&) noexcept;
+    std::size_t read_some(char* buffer, std::size_t size, std::error_code&) noexcept;
+    std::size_t write_some(const char* data, std::size_t size, std::error_code&) noexcept;
+
+    /// \tparam Oper An operation type inherited from IoOper with an initate()
+    /// function that initiates the operation and figures out whether it needs
+    /// to read from, or write to the underlying descriptor to
+    /// proceed. `initiate()` must return Want::read if the operation needs to
+    /// read, or Want::write if the operation needs to write. If the operation
+    /// completes immediately (e.g. due to a failure during initialization),
+    /// `initiate()` must return Want::nothing.
+    template<class Oper, class... Args>
+    void initiate_oper(std::unique_ptr<Oper, LendersOperDeleter>, Args&&...);
+
+    void ensure_blocking_mode();
+    void ensure_nonblocking_mode();
+
+private:
+    native_handle_type m_fd = -1;
+    bool m_in_blocking_mode; // Not in nonblocking mode
+
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    bool m_read_ready;
+    bool m_write_ready;
+    bool m_imminent_end_of_input; // Kernel has seen the end of input
+    bool m_is_registered;
+    OperQueue<IoOper> m_suspended_read_ops, m_suspended_write_ops;
+
+    void deregister_for_async() noexcept;
+#endif
+
+    bool assume_read_would_block() const noexcept;
+    bool assume_write_would_block() const noexcept;
+
+    void set_read_ready(bool) noexcept;
+    void set_write_ready(bool) noexcept;
+
+    void set_nonblock_flag(bool value);
+    void add_initiated_oper(LendersIoOperPtr, Want);
+
+    void do_close() noexcept;
+    native_handle_type do_release() noexcept;
+
+    friend class IoReactor;
 };
 
 
@@ -389,18 +550,79 @@ public:
     class Query;
 
     Resolver(Service&);
-    ~Resolver() noexcept {}
+    ~Resolver() noexcept;
 
     /// Thread-safe.
     Service& get_service() noexcept;
 
     /// @{ \brief Resolve the specified query to one or more endpoints.
-    void resolve(const Query&, Endpoint::List&);
-    std::error_code resolve(const Query&, Endpoint::List&, std::error_code&);
+    Endpoint::List resolve(const Query&);
+    Endpoint::List resolve(const Query&, std::error_code&);
     /// @}
 
+    /// \brief Perform an asynchronous resolve operation.
+    ///
+    /// Initiate an asynchronous resolve operation. The completion handler will
+    /// be called when the operation completes. The operation completes when it
+    /// succeeds, or an error occurs.
+    ///
+    /// The completion handler is always executed by the event loop thread,
+    /// i.e., by a thread that is executing Service::run(). Conversely, the
+    /// completion handler is guaranteed to not be called while no thread is
+    /// executing Service::run(). The execution of the completion handler is
+    /// always deferred to the event loop, meaning that it never happens as a
+    /// synchronous side effect of the execution of async_resolve(), even when
+    /// async_resolve() is executed by the event loop thread. The completion
+    /// handler is guaranteed to be called eventually, as long as there is time
+    /// enough for the operation to complete or fail, and a thread is executing
+    /// Service::run() for long enough.
+    ///
+    /// The operation can be canceled by calling cancel(), and will be
+    /// automatically canceled if the resolver object is destroyed. If the
+    /// operation is canceled, it will fail with `error::operation_aborted`. The
+    /// operation remains cancelable up until the point in time where the
+    /// completion handler starts to execute. This means that if cancel() is
+    /// called before the completion handler starts to execute, then the
+    /// completion handler is guaranteed to have `error::operation_aborted`
+    /// passed to it. This is true regardless of whether cancel() is called
+    /// explicitly or implicitly, such as when the resolver is destroyed.
+    ///
+    /// The specified handler will be executed by an expression on the form
+    /// `handler(ec, endpoints)` where `ec` is the error code and `endpoints` is
+    /// an object of type `Endpoint::List`. If the the handler object is
+    /// movable, it will never be copied. Otherwise, it will be copied as
+    /// necessary.
+    ///
+    /// It is an error to start a new resolve operation (synchronous or
+    /// asynchronous) while an asynchronous resolve operation is in progress via
+    /// the same resolver object. An asynchronous resolve operation is
+    /// considered complete as soon as the completion handler starts to
+    /// execute. This means that a new resolve operation can be started from the
+    /// completion handler.
+    template<class H> void async_resolve(Query, H handler);
+
+    /// \brief Cancel all asynchronous operations.
+    ///
+    /// Cause all incomplete asynchronous operations, that are associated with
+    /// this resolver (at most one), to fail with `error::operation_aborted`. An
+    /// asynchronous operation is complete precisely when its completion handler
+    /// starts executing.
+    ///
+    /// Completion handlers of canceled operations will become immediately ready
+    /// to execute, but will never be executed directly as part of the execution
+    /// of cancel().
+    ///
+    /// Cancellation happens automatically when the resolver object is destroyed.
+    void cancel() noexcept;
+
 private:
-    Service& m_service;
+    template<class H> class ResolveOper;
+
+    Service::Impl& m_service_impl;
+
+    Service::OwnersOperPtr m_resolve_oper;
+
+    void initiate_oper(Service::LendersResolveOperPtr);
 };
 
 
@@ -435,18 +657,21 @@ private:
     std::string m_host;    // hostname
     std::string m_service; // port
 
-    friend class Resolver;
+    friend class Service;
 };
 
 
 class SocketBase {
 public:
+    using native_handle_type = Service::Descriptor::native_handle_type;
+
     ~SocketBase() noexcept;
 
     /// Thread-safe.
     Service& get_service() noexcept;
 
     bool is_open() const noexcept;
+    native_handle_type native_handle() const noexcept;
 
     /// @{ \brief Open the socket for use with the specified protocol.
     ///
@@ -496,51 +721,53 @@ public:
     Endpoint local_endpoint() const;
     Endpoint local_endpoint(std::error_code&) const;
 
+    /// Release the ownership of this socket object over the native handle and
+    /// return the native handle to the caller. The caller assumes ownership
+    /// over the returned handle. The socket is left in a closed
+    /// state. Incomplete asynchronous operations will be canceled as if close()
+    /// had been called.
+    ///
+    /// If called on a closed socket, this function is a no-op, and returns the
+    /// same value as would be returned by native_handle()
+    native_handle_type release_native_handle() noexcept;
+
 private:
     enum opt_enum {
         opt_ReuseAddr, ///< `SOL_SOCKET`, `SO_REUSEADDR`
         opt_Linger,    ///< `SOL_SOCKET`, `SO_LINGER`
+        opt_NoDelay,   ///< `IPPROTO_TCP`, `TCP_NODELAY` (disable the Nagle algorithm)
     };
 
     template<class, int, class> class Option;
 
 public:
     using reuse_address = Option<bool, opt_ReuseAddr, int>;
+    using no_delay      = Option<bool, opt_NoDelay,   int>;
 
     // linger struct defined by POSIX sys/socket.h.
     struct linger_opt;
     using linger = Option<linger_opt, opt_Linger, struct linger>;
 
+protected:
+    Service::Descriptor m_desc;
+
 private:
-    int m_sock_fd = -1;
-    bool m_in_blocking_mode; // Not in nonblocking mode
     StreamProtocol m_protocol;
 
 protected:
-    Service& m_service;
     Service::OwnersOperPtr m_read_oper;  // Read or accept
     Service::OwnersOperPtr m_write_oper; // Write or connect
 
     SocketBase(Service&);
 
-    int get_sock_fd() const noexcept;
     const StreamProtocol& get_protocol() const noexcept;
-    std::error_code do_assign(const StreamProtocol&, int sock_fd, std::error_code& ec);
+    std::error_code do_assign(const StreamProtocol&, native_handle_type, std::error_code&);
     void do_close() noexcept;
 
     void get_option(opt_enum, void* value_data, std::size_t& value_size, std::error_code&) const;
     void set_option(opt_enum, const void* value_data, std::size_t value_size, std::error_code&);
     void map_option(opt_enum, int& level, int& option_name) const;
 
-    // `ec` untouched on success
-    std::error_code ensure_blocking_mode(std::error_code& ec) noexcept;
-    std::error_code ensure_nonblocking_mode(std::error_code& ec) noexcept;
-
-private:
-    // `ec` untouched on success
-    std::error_code set_nonblocking_mode(bool enable, std::error_code&) noexcept;
-
-    friend class Service;
     friend class Acceptor;
 };
 
@@ -580,10 +807,8 @@ struct SocketBase::linger_opt {
 /// allowed to run concurrently with an asynchronous one on the same
 /// socket. Note that an asynchronous operation is considered to be running
 /// until its completion handler starts executing.
-class Socket: public SocketBase {
+class Socket : public SocketBase {
 public:
-    using native_handle_type = int;
-
     Socket(Service&);
 
     /// \brief Create a socket with an already-connected native socket handle.
@@ -629,13 +854,12 @@ public:
     ///
     /// \return The number of bytes places in the specified buffer upon return.
     std::size_t read(char* buffer, std::size_t size);
-    std::size_t read(char* buffer, std::size_t size, std::error_code& ec) noexcept;
+    std::size_t read(char* buffer, std::size_t size, std::error_code& ec);
     std::size_t read(char* buffer, std::size_t size, ReadAheadBuffer&);
-    std::size_t read(char* buffer, std::size_t size, ReadAheadBuffer&,
-                     std::error_code& ec) noexcept;
+    std::size_t read(char* buffer, std::size_t size, ReadAheadBuffer&, std::error_code& ec);
     std::size_t read_until(char* buffer, std::size_t size, char delim, ReadAheadBuffer&);
     std::size_t read_until(char* buffer, std::size_t size, char delim, ReadAheadBuffer&,
-                           std::error_code& ec) noexcept;
+                           std::error_code& ec);
     /// @}
 
     /// @{ \brief Perform a synchronous write operation.
@@ -652,7 +876,7 @@ public:
     /// failure. On success it returns \a size. On faulure it returns the number
     /// of bytes written before the failure occured.
     std::size_t write(const char* data, std::size_t size);
-    std::size_t write(const char* data, std::size_t size, std::error_code& ec) noexcept;
+    std::size_t write(const char* data, std::size_t size, std::error_code& ec);
     /// @}
 
     /// @{ \brief Read at least one byte from this socket.
@@ -690,7 +914,7 @@ public:
     /// argument version will return a value greater than zero when, and only
     /// when \a ec is set to indicate success (no error, and no end of input).
     std::size_t read_some(char* buffer, std::size_t size);
-    std::size_t read_some(char* buffer, std::size_t size, std::error_code& ec) noexcept;
+    std::size_t read_some(char* buffer, std::size_t size, std::error_code& ec);
     /// @}
 
     /// @{ \brief Write at least one byte to this socket.
@@ -722,7 +946,7 @@ public:
     /// argument version will return a value greater than zero when, and only
     /// when \a ec is set to indicate success.
     std::size_t write_some(const char* data, std::size_t size);
-    std::size_t write_some(const char* data, std::size_t size, std::error_code&) noexcept;
+    std::size_t write_some(const char* data, std::size_t size, std::error_code&);
     /// @}
 
     /// \brief Perform an asynchronous connect operation.
@@ -886,14 +1110,20 @@ public:
     template<class H> void async_write_some(const char* data, std::size_t size, H handler);
 
     enum shutdown_type {
-        /// Shutdown the receive side of the socket.
+#ifdef _WIN32
+        /// Shutdown the receiving side of the socket.
+        shutdown_receive = SD_RECEIVE,
+
+        /// Shutdown the sending side of the socket.
+        shutdown_send = SD_SEND,
+
+        /// Shutdown both sending and receiving side of the socket.
+        shutdown_both = SD_BOTH
+#else
         shutdown_receive = SHUT_RD,
-
-        /// Shutdown the send side of the socket.
         shutdown_send = SHUT_WR,
-
-        /// Shutdown both send and receive on the socket.
         shutdown_both = SHUT_RDWR
+#endif
     };
 
     /// @{ \brief Shut down the connected sockets sending and/or receiving
@@ -902,7 +1132,7 @@ public:
     /// It is an error to call this function when the socket is not both open
     /// and connected.
     void shutdown(shutdown_type);
-    std::error_code shutdown(shutdown_type, std::error_code&) noexcept;
+    std::error_code shutdown(shutdown_type, std::error_code&);
     /// @}
 
     /// @{ \brief Initialize socket with an already-connected native socket
@@ -939,13 +1169,11 @@ private:
     using LendersConnectOperPtr = std::unique_ptr<ConnectOperBase, Service::LendersOperDeleter>;
 
     // `ec` untouched on success, but no immediate completion
-    bool initiate_async_connect(const Endpoint&, std::error_code& ec) noexcept;
+    bool initiate_async_connect(const Endpoint&, std::error_code& ec);
     // `ec` untouched on success
     std::error_code finalize_async_connect(std::error_code& ec) noexcept;
 
-    // See Service::BasicStreamOps for details on these these 8 functions.
-    void do_init_read_sync(std::error_code&) noexcept;
-    void do_init_write_sync(std::error_code&) noexcept;
+    // See Service::BasicStreamOps for details on these these 6 functions.
     void do_init_read_async(std::error_code&, Want&) noexcept;
     void do_init_write_async(std::error_code&, Want&) noexcept;
     std::size_t do_read_some_sync(char* buffer, std::size_t size,
@@ -969,7 +1197,7 @@ private:
 /// allowed to run concurrently with an asynchronous one on the same
 /// acceptor. Note that an asynchronous operation is considered to be running
 /// until its completion handler starts executing.
-class Acceptor: public SocketBase {
+class Acceptor : public SocketBase {
 public:
     Acceptor(Service&);
     ~Acceptor() noexcept;
@@ -1043,7 +1271,6 @@ private:
     using LendersAcceptOperPtr = std::unique_ptr<AcceptOperBase, Service::LendersOperDeleter>;
 
     std::error_code accept(Socket&, Endpoint*, std::error_code&);
-    void do_accept_sync(Socket&, Endpoint*, std::error_code&) noexcept;
     Want do_accept_async(Socket&, Endpoint*, std::error_code&) noexcept;
 
     template<class H> void async_accept(Socket&, Endpoint*, H);
@@ -1110,6 +1337,8 @@ public:
     /// Completion handlers of canceled operations will become immediately ready
     /// to execute, but will never be executed directly as part of the execution
     /// of cancel().
+    ///
+    /// Cancellation happens automatically when the timer object is destroyed.
     void cancel() noexcept;
 
 private:
@@ -1117,8 +1346,76 @@ private:
 
     using clock = Service::clock;
 
-    Service& m_service;
+    Service::Impl& m_service_impl;
     Service::OwnersOperPtr m_wait_oper;
+
+    void initiate_oper(Service::LendersWaitOperPtr);
+};
+
+
+/// \brief Register a function whose invocation can be triggered repeatedly.
+///
+/// While the function is always executed by the event loop thread, the
+/// triggering of its execution can be done by any thread, and the triggering
+/// operation is guaranteed to never throw.
+///
+/// The function is guaranteed to not be called after the Trigger object is
+/// destroyed. It is safe, though, to destroy the Trigger object during the
+/// execution of the function.
+///
+/// Note that even though the trigger() function is thread-safe, the Trigger
+/// object, as a whole, is not. In particular, construction and destruction must
+/// not be considered thread-safe.
+///
+/// ### Relation to post()
+///
+/// For a particular execution of trigger() and a particular invocation of
+/// Service::post(), if the execution of trigger() ends before the execution of
+/// Service::post() begins, then it is guaranteed that the function associated
+/// with the trigger gets to execute at least once after the execution of
+/// trigger() begins, and before the post handler gets to execute.
+class Trigger {
+public:
+    template<class F> Trigger(Service&, F func);
+    ~Trigger() noexcept;
+
+    Trigger() noexcept = default;
+    Trigger(Trigger&&) noexcept = default;
+    Trigger& operator=(Trigger&&) noexcept = default;
+
+    /// \brief Trigger another invocation of the associated function.
+    ///
+    /// An invocation of trigger() puts the Trigger object into the triggered
+    /// state. It remains in the triggered state until shortly before the
+    /// function starts to execute. While the Trigger object is in the triggered
+    /// state, trigger() has no effect. This means that the number of executions
+    /// of the function will generally be less that the number of times
+    /// trigger() is invoked().
+    ///
+    /// A particular invocation of trigger() ensures that there will be at least
+    /// one invocation of the associated function whose execution begins after
+    /// the beginning of the execution of trigger(), so long as the event loop
+    /// thread does not exit prematurely from run().
+    ///
+    /// If trigger() is invoked from the event loop thread, the next execution
+    /// of the associated function will not begin until after trigger returns(),
+    /// effectively preventing reentrancy for the associated function.
+    ///
+    /// If trigger() is invoked from another thread, the associated function may
+    /// start to execute before trigger() returns.
+    ///
+    /// Note that the associated function can retrigger itself, i.e., if the
+    /// associated function calls trigger(), then that will lead to another
+    /// invocation of the associated function, but not until the first
+    /// invocation ends (no reentrance).
+    ///
+    /// This function is thread-safe.
+    void trigger() noexcept;
+
+private:
+    template<class H> class ExecOper;
+
+    util::bind_ptr<Service::TriggerExecOperBase> m_exec_oper;
 };
 
 
@@ -1184,9 +1481,7 @@ std::error_code make_error_code(errors);
 
 namespace std {
 
-template<>
-struct is_error_code_enum<realm::util::network::errors>
-{
+template<> class is_error_code_enum<realm::util::network::errors> {
 public:
     static const bool value = true;
 };
@@ -1239,7 +1534,7 @@ inline int StreamProtocol::protocol() const
     return m_protocol;
 }
 
-inline StreamProtocol::StreamProtocol():
+inline StreamProtocol::StreamProtocol() :
     m_family{AF_UNSPEC},     // Allow both IPv4 and IPv6
     m_socktype{SOCK_STREAM}, // Or SOCK_DGRAM for UDP
     m_protocol{0}            // Any protocol
@@ -1269,7 +1564,12 @@ inline std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T>& out, const A
     };
     char buffer[sizeof (buffer_union)];
     int af = addr.m_is_ip_v6 ? AF_INET6 : AF_INET;
-    const char* ret = ::inet_ntop(af, &addr.m_union, buffer, sizeof buffer);
+#ifdef _WIN32
+    void* src = const_cast<void*>(reinterpret_cast<const void*>(&addr.m_union));
+#else
+    const void* src = &addr.m_union;
+#endif
+    const char* ret = ::inet_ntop(af, src, buffer, sizeof buffer);
     if (ret == 0) {
         std::error_code ec = make_basic_system_error_code(errno);
         throw std::system_error(ec);
@@ -1343,12 +1643,12 @@ inline const Endpoint::data_type* Endpoint::data() const
     return &m_sockaddr_union.m_base;
 }
 
-inline Endpoint::Endpoint():
+inline Endpoint::Endpoint() :
     Endpoint{StreamProtocol::ip_v4(), 0}
 {
 }
 
-inline Endpoint::Endpoint(const StreamProtocol& protocol, port_type port):
+inline Endpoint::Endpoint(const StreamProtocol& protocol, port_type port) :
     m_protocol{protocol}
 {
     int family = m_protocol.family();
@@ -1389,19 +1689,223 @@ inline Endpoint::Endpoint(const Address& addr, port_type port)
     }
 }
 
-inline Endpoint::List::iterator Endpoint::List::begin() const
+inline Endpoint::List::iterator Endpoint::List::begin() const noexcept
 {
     return m_endpoints.data();
 }
 
-inline Endpoint::List::iterator Endpoint::List::end() const
+inline Endpoint::List::iterator Endpoint::List::end() const noexcept
 {
     return m_endpoints.data() + m_endpoints.size();
 }
 
-inline std::size_t Endpoint::List::size() const
+inline std::size_t Endpoint::List::size() const noexcept
 {
     return m_endpoints.size();
+}
+
+inline bool Endpoint::List::empty() const noexcept
+{
+    return m_endpoints.size() == 0;
+}
+
+// ---------------- Service::OperQueue ----------------
+
+template<class Oper> inline bool Service::OperQueue<Oper>::empty() const noexcept
+{
+    return !m_back;
+}
+
+template<class Oper> inline void Service::OperQueue<Oper>::push_back(LendersOperPtr op) noexcept
+{
+    REALM_ASSERT(!op->m_next);
+    if (m_back) {
+        op->m_next = m_back->m_next;
+        m_back->m_next = op.get();
+    }
+    else {
+        op->m_next = op.get();
+    }
+    m_back = op.release();
+}
+
+template<class Oper> template<class Oper2>
+inline void Service::OperQueue<Oper>::push_back(OperQueue<Oper2>& q) noexcept
+{
+    if (!q.m_back)
+        return;
+    if (m_back)
+        std::swap(m_back->m_next, q.m_back->m_next);
+    m_back = q.m_back;
+    q.m_back = nullptr;
+}
+
+template<class Oper> inline auto Service::OperQueue<Oper>::pop_front() noexcept -> LendersOperPtr
+{
+    Oper* op = nullptr;
+    if (m_back) {
+        op = static_cast<Oper*>(m_back->m_next);
+        if (op != m_back) {
+            m_back->m_next = op->m_next;
+        }
+        else {
+            m_back = nullptr;
+        }
+        op->m_next = nullptr;
+    }
+    return LendersOperPtr(op);
+}
+
+template<class Oper> inline void Service::OperQueue<Oper>::clear() noexcept
+{
+    if (m_back) {
+        LendersOperPtr op(m_back);
+        while (op->m_next != m_back)
+            op.reset(static_cast<Oper*>(op->m_next));
+        m_back = nullptr;
+    }
+}
+
+template<class Oper> inline Service::OperQueue<Oper>::OperQueue(OperQueue&& q) noexcept :
+    m_back{q.m_back}
+{
+    q.m_back = nullptr;
+}
+
+template<class Oper> inline Service::OperQueue<Oper>::~OperQueue() noexcept
+{
+    clear();
+}
+
+// ---------------- Service::Descriptor ----------------
+
+inline Service::Descriptor::Descriptor(Impl& s) noexcept :
+    service_impl{s}
+{
+}
+
+inline Service::Descriptor::~Descriptor() noexcept
+{
+    if (is_open())
+        close();
+}
+
+inline void Service::Descriptor::assign(native_handle_type fd, bool in_blocking_mode) noexcept
+{
+    REALM_ASSERT(!is_open());
+    m_fd = fd;
+    m_in_blocking_mode = in_blocking_mode;
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    m_read_ready  = false;
+    m_write_ready = false;
+    m_imminent_end_of_input = false;
+    m_is_registered = false;
+#endif
+}
+
+inline void Service::Descriptor::close() noexcept
+{
+    REALM_ASSERT(is_open());
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    if (m_is_registered)
+        deregister_for_async();
+    m_is_registered = false;
+#endif
+    do_close();
+}
+
+inline auto Service::Descriptor::release() noexcept -> native_handle_type
+{
+    REALM_ASSERT(is_open());
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    if (m_is_registered)
+        deregister_for_async();
+    m_is_registered = false;
+#endif
+    return do_release();
+}
+
+inline bool Service::Descriptor::is_open() const noexcept
+{
+    return (m_fd != -1);
+}
+
+inline auto Service::Descriptor::native_handle() const noexcept -> native_handle_type
+{
+    return m_fd;
+}
+
+inline bool Service::Descriptor::in_blocking_mode() const noexcept
+{
+    return m_in_blocking_mode;
+}
+
+template<class Oper, class... Args>
+inline void Service::Descriptor::initiate_oper(std::unique_ptr<Oper, LendersOperDeleter> op,
+                                               Args&&... args)
+{
+    Service::Want want = op->initiate(std::forward<Args>(args)...); // Throws
+    add_initiated_oper(std::move(op), want); // Throws
+}
+
+inline void Service::Descriptor::ensure_blocking_mode()
+{
+    // Assuming that descriptors are either used mostly in blocking mode, or
+    // mostly in nonblocking mode.
+    if (REALM_UNLIKELY(!m_in_blocking_mode)) {
+        bool value = false;
+        set_nonblock_flag(value); // Throws
+        m_in_blocking_mode = true;
+    }
+}
+
+inline void Service::Descriptor::ensure_nonblocking_mode()
+{
+    // Assuming that descriptors are either used mostly in blocking mode, or
+    // mostly in nonblocking mode.
+    if (REALM_UNLIKELY(m_in_blocking_mode)) {
+        bool value = true;
+        set_nonblock_flag(value); // Throws
+        m_in_blocking_mode = false;
+    }
+}
+
+inline bool Service::Descriptor::assume_read_would_block() const noexcept
+{
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    return !m_in_blocking_mode && !m_read_ready;
+#else
+    return false;
+#endif
+}
+
+inline bool Service::Descriptor::assume_write_would_block() const noexcept
+{
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    return !m_in_blocking_mode && !m_write_ready;
+#else
+    return false;
+#endif
+}
+
+inline void Service::Descriptor::set_read_ready(bool value) noexcept
+{
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    m_read_ready = value;
+#else
+    // No-op
+    static_cast<void>(value);
+#endif
+}
+
+inline void Service::Descriptor::set_write_ready(bool value) noexcept
+{
+#if REALM_HAVE_EPOLL || REALM_HAVE_KQUEUE
+    m_write_ready = value;
+#else
+    // No-op
+    static_cast<void>(value);
+#endif
 }
 
 // ---------------- Service ----------------
@@ -1410,10 +1914,10 @@ class Service::AsyncOper {
 public:
     bool in_use() const noexcept;
     bool is_complete() const noexcept;
-    bool is_uncanceled() const noexcept;
+    bool is_canceled() const noexcept;
     void cancel() noexcept;
-    /// Every object of type \ref AsyncOper must be desroyed either by a call to
-    /// this function or to recycle(). This function recycles the operation
+    /// Every object of type \ref AsyncOper must be destroyed either by a call
+    /// to this function or to recycle(). This function recycles the operation
     /// object (commits suicide), even if it throws.
     virtual void recycle_and_execute() = 0;
     /// Every object of type \ref AsyncOper must be destroyed either by a call
@@ -1426,37 +1930,79 @@ public:
 protected:
     AsyncOper(std::size_t size, bool in_use) noexcept;
     virtual ~AsyncOper() noexcept {}
-    bool is_canceled() const noexcept;
     void set_is_complete(bool value) noexcept;
     template<class H, class... Args>
     void do_recycle_and_execute(bool orphaned, H& handler, Args&&...);
     void do_recycle(bool orphaned) noexcept;
 private:
     std::size_t m_size; // Allocated number of bytes
-    bool m_in_use   = false;
-    bool m_complete = false;     // Always false when not in use
-    bool m_canceled = false;     // Always false when not in use
+    bool m_in_use = false;
+    // Set to true when the operation completes successfully or fails. If the
+    // operation is canceled before this happens, it will never be set to
+    // true. Always false when not in use
+    bool m_complete = false;
+    // Set to true when the operation is canceled. Always false when not in use.
+    bool m_canceled = false;
     AsyncOper* m_next = nullptr; // Always null when not in use
+    template<class H, class... Args>
+    void do_recycle_and_execute_helper(bool orphaned, bool& was_recycled, H handler, Args...);
     friend class Service;
 };
 
-class Service::WaitOperBase: public AsyncOper {
+class Service::ResolveOperBase : public AsyncOper {
 public:
-    WaitOperBase(std::size_t size, DeadlineTimer& timer, clock::time_point expiration_time):
-        AsyncOper{size, true}, // Second argument is `in_use`
-        m_timer{&timer},
-        m_expiration_time{expiration_time}
+    ResolveOperBase(std::size_t size, Resolver& resolver, Resolver::Query query) noexcept :
+        AsyncOper{size, true},
+        m_resolver{&resolver},
+        m_query{std::move(query)}
     {
+    }
+    void complete() noexcept
+    {
+        set_is_complete(true);
     }
     void recycle() noexcept override final
     {
-        bool orphaned = !m_timer;
+        bool orphaned = !m_resolver;
+        REALM_ASSERT(orphaned);
         // Note: do_recycle() commits suicide.
         do_recycle(orphaned);
     }
     void orphan() noexcept override final
     {
-        m_timer = 0;
+        m_resolver = nullptr;
+    }
+protected:
+    Resolver* m_resolver;
+    Resolver::Query m_query;
+    Endpoint::List m_endpoints;
+    std::error_code m_error_code;
+    friend class Service;
+};
+
+class Service::WaitOperBase : public AsyncOper {
+public:
+    WaitOperBase(std::size_t size, DeadlineTimer& timer,
+                 clock::time_point expiration_time) noexcept :
+        AsyncOper{size, true}, // Second argument is `in_use`
+        m_timer{&timer},
+        m_expiration_time{expiration_time}
+    {
+    }
+    void complete() noexcept
+    {
+        set_is_complete(true);
+    }
+    void recycle() noexcept override final
+    {
+        bool orphaned = !m_timer;
+        REALM_ASSERT(orphaned);
+        // Note: do_recycle() commits suicide.
+        do_recycle(orphaned);
+    }
+    void orphan() noexcept override final
+    {
+        m_timer = nullptr;
     }
 protected:
     DeadlineTimer* m_timer;
@@ -1464,9 +2010,37 @@ protected:
     friend class Service;
 };
 
-class Service::PostOperBase: public AsyncOper {
+class Service::TriggerExecOperBase : public AsyncOper, public AtomicRefCountBase {
 public:
-    PostOperBase(std::size_t size, Impl& service):
+    TriggerExecOperBase(Impl& service) noexcept :
+        AsyncOper{0, false}, // First arg is `size` (unused), second arg is `in_use`
+        m_service{&service}
+    {
+    }
+    void recycle() noexcept override final
+    {
+        REALM_ASSERT(in_use());
+        REALM_ASSERT(!m_service);
+        // Note: Potential suicide when `self` goes out of scope
+        util::bind_ptr<TriggerExecOperBase> self{this, bind_ptr_base::adopt_tag{}};
+    }
+    void orphan() noexcept override final
+    {
+        REALM_ASSERT(m_service);
+        m_service = nullptr;
+    }
+    void trigger() noexcept
+    {
+        REALM_ASSERT(m_service);
+        Service::trigger_exec(*m_service, *this);
+    }
+protected:
+    Impl* m_service;
+};
+
+class Service::PostOperBase : public AsyncOper {
+public:
+    PostOperBase(std::size_t size, Impl& service) noexcept :
         AsyncOper{size, true}, // Second argument is `in_use`
         m_service{service}
     {
@@ -1484,9 +2058,9 @@ protected:
     Impl& m_service;
 };
 
-template<class H> class Service::PostOper: public PostOperBase {
+template<class H> class Service::PostOper : public PostOperBase {
 public:
-    PostOper(std::size_t size, Impl& service, H handler):
+    PostOper(std::size_t size, Impl& service, H handler) :
         PostOperBase{size, service},
         m_handler{std::move(handler)}
     {
@@ -1516,19 +2090,26 @@ private:
     H m_handler;
 };
 
-class Service::IoOper: public AsyncOper {
+class Service::IoOper : public AsyncOper {
 public:
-    IoOper(std::size_t size) noexcept:
-        AsyncOper(size, true) // Second argument is `in_use`
+    IoOper(std::size_t size) noexcept :
+        AsyncOper{size, true} // Second argument is `in_use`
     {
     }
-    virtual Want proceed() noexcept = 0;
+    virtual Descriptor& descriptor() noexcept = 0;
+    /// Advance this operation and figure out out whether it needs to read from,
+    /// or write to the underlying descriptor to advance further. This function
+    /// must return Want::read if the operation needs to read, or Want::write if
+    /// the operation needs to write to advance further. If the operation
+    /// completes (due to success or failure), this function must return
+    /// Want::nothing.
+    virtual Want advance() noexcept = 0;
 };
 
-class Service::UnusedOper: public AsyncOper {
+class Service::UnusedOper : public AsyncOper {
 public:
-    UnusedOper(std::size_t size) noexcept:
-        AsyncOper(size, false) // Second argument is `in_use`
+    UnusedOper(std::size_t size) noexcept :
+        AsyncOper{size, false} // Second argument is `in_use`
     {
     }
     void recycle_and_execute() override final
@@ -1550,8 +2131,8 @@ public:
 
 // `S` must be a stream class with the following member functions:
 //
-//    void do_init_read_sync(std::error_code& ec) noexcept;
-//    void do_init_write_sync(std::error_code& ec) noexcept;
+//    Socket& lowest_layer() noexcept;
+//
 //    void do_init_read_async(std::error_code& ec, Want& want) noexcept;
 //    void do_init_write_async(std::error_code& ec, Want& want) noexcept;
 //
@@ -1564,14 +2145,7 @@ public:
 //    std::size_t do_write_some_async(const char* data, std::size_t size,
 //                                    std::error_code& ec, Want& want) noexcept;
 //
-// Additionally, `S` must have members `m_read_oper` and `m_write_oper`, which
-// both must be of type `LendersIoOperPtr` (or equivalent smart pointer to a
-// derivative of IoOper).
-//
-// The do_init_*_sync() functions must enable blocking mode. The
-// do_init_*_async() function must disable blocking mode.
-//
-// If an error occurs during any of the 8 functions, the `ec` argument must be
+// If an error occurs during any of these 6 functions, the `ec` argument must be
 // set accordingly. Otherwise the `ec` argument must be set to
 // `std::error_code()`.
 //
@@ -1591,7 +2165,7 @@ public:
 // zero. Otherwise they must set `ec` to `std::system_error()` and return the
 // number of bytes read or written, which **must** be at least 1. If the
 // underlying socket is in nonblocking mode, and no bytes could be immediately
-// read or written these functinos must fail with
+// read or written, these functions must fail with
 // `error::resource_unavailable_try_again`.
 //
 // If an error occurs during reading or writing, do_*_some_async() must set `ec`
@@ -1647,12 +2221,11 @@ public:
 
     // Synchronous read
     static std::size_t read(S& stream, char* buffer, std::size_t size,
-                            std::error_code& ec) noexcept
+                            std::error_code& ec)
     {
-        REALM_ASSERT(!stream.m_read_oper || !stream.m_read_oper->in_use());
-        stream.do_init_read_sync(ec);
-        if (REALM_UNLIKELY(ec))
-            return 0;
+        REALM_ASSERT(!stream.lowest_layer().m_read_oper ||
+                     !stream.lowest_layer().m_read_oper->in_use());
+        stream.lowest_layer().m_desc.ensure_blocking_mode(); // Throws
         char* begin = buffer;
         char* end   = buffer + size;
         char* curr  = begin;
@@ -1676,12 +2249,11 @@ public:
 
     // Synchronous write
     static std::size_t write(S& stream, const char* data, std::size_t size,
-                             std::error_code& ec) noexcept
+                             std::error_code& ec)
     {
-        REALM_ASSERT(!stream.m_write_oper || !stream.m_write_oper->in_use());
-        stream.do_init_write_sync(ec);
-        if (REALM_UNLIKELY(ec))
-            return 0;
+        REALM_ASSERT(!stream.lowest_layer().m_write_oper ||
+                     !stream.lowest_layer().m_write_oper->in_use());
+        stream.lowest_layer().m_desc.ensure_blocking_mode(); // Throws
         const char* begin = data;
         const char* end   = data + size;
         const char* curr  = begin;
@@ -1705,13 +2277,11 @@ public:
 
     // Synchronous read
     static std::size_t buffered_read(S& stream, char* buffer, std::size_t size, int delim,
-                                     ReadAheadBuffer& rab, std::error_code& ec) noexcept
+                                     ReadAheadBuffer& rab, std::error_code& ec)
     {
-        REALM_ASSERT(!stream.m_read_oper || !stream.m_read_oper->in_use());
-        stream.do_init_read_sync(ec);
-        if (REALM_UNLIKELY(ec))
-            return 0;
-
+        REALM_ASSERT(!stream.lowest_layer().m_read_oper ||
+                     !stream.lowest_layer().m_read_oper->in_use());
+        stream.lowest_layer().m_desc.ensure_blocking_mode(); // Throws
         char* begin = buffer;
         char* end   = buffer + size;
         char* curr  = begin;
@@ -1730,23 +2300,21 @@ public:
 
     // Synchronous read
     static std::size_t read_some(S& stream, char* buffer, std::size_t size,
-                                 std::error_code& ec) noexcept
+                                 std::error_code& ec)
     {
-        REALM_ASSERT(!stream.m_read_oper || !stream.m_read_oper->in_use());
-        stream.do_init_read_sync(ec);
-        if (REALM_UNLIKELY(ec))
-            return 0;
+        REALM_ASSERT(!stream.lowest_layer().m_read_oper ||
+                     !stream.lowest_layer().m_read_oper->in_use());
+        stream.lowest_layer().m_desc.ensure_blocking_mode(); // Throws
         return stream.do_read_some_sync(buffer, size, ec);
     }
 
     // Synchronous write
     static std::size_t write_some(S& stream, const char* data, std::size_t size,
-                                  std::error_code& ec) noexcept
+                                  std::error_code& ec)
     {
-        REALM_ASSERT(!stream.m_write_oper || !stream.m_write_oper->in_use());
-        stream.do_init_write_sync(ec);
-        if (REALM_UNLIKELY(ec))
-            return 0;
+        REALM_ASSERT(!stream.lowest_layer().m_write_oper ||
+                     !stream.lowest_layer().m_write_oper->in_use());
+        stream.lowest_layer().m_desc.ensure_blocking_mode(); // Throws
         return stream.do_write_some_sync(data, size, ec);
     }
 
@@ -1756,9 +2324,9 @@ public:
         char* begin = buffer;
         char* end   = buffer + size;
         LendersReadOperPtr op =
-            Service::alloc<ReadOper<H>>(stream.m_read_oper, stream, is_read_some, begin, end,
-                                        std::move(handler)); // Throws
-        initiate_io_oper(std::move(op)); // Throws
+            Service::alloc<ReadOper<H>>(stream.lowest_layer().m_read_oper, stream, is_read_some,
+                                        begin, end, std::move(handler)); // Throws
+        stream.lowest_layer().m_desc.initiate_oper(std::move(op)); // Throws
     }
 
     template<class H>
@@ -1768,9 +2336,9 @@ public:
         const char* begin = data;
         const char* end   = data + size;
         LendersWriteOperPtr op =
-            Service::alloc<WriteOper<H>>(stream.m_write_oper, stream, is_write_some, begin, end,
-                                         std::move(handler)); // Throws
-        initiate_io_oper(std::move(op)); // Throws
+            Service::alloc<WriteOper<H>>(stream.lowest_layer().m_write_oper, stream, is_write_some,
+                                         begin, end, std::move(handler)); // Throws
+        stream.lowest_layer().m_desc.initiate_oper(std::move(op)); // Throws
     }
 
     template<class H>
@@ -1780,22 +2348,24 @@ public:
         char* begin = buffer;
         char* end   = buffer + size;
         LendersBufferedReadOperPtr op =
-            Service::alloc<BufferedReadOper<H>>(stream.m_read_oper, stream, begin, end, delim,
-                                                rab, std::move(handler)); // Throws
-        initiate_io_oper(std::move(op)); // Throws
+            Service::alloc<BufferedReadOper<H>>(stream.lowest_layer().m_read_oper, stream,
+                                                begin, end, delim, rab,
+                                                std::move(handler)); // Throws
+        stream.lowest_layer().m_desc.initiate_oper(std::move(op)); // Throws
     }
 };
 
-template<class S> class Service::BasicStreamOps<S>::StreamOper: public IoOper {
+template<class S> class Service::BasicStreamOps<S>::StreamOper : public IoOper {
 public:
-    StreamOper(std::size_t size, S& stream) noexcept:
-        IoOper(size),
-        m_stream(&stream)
+    StreamOper(std::size_t size, S& stream) noexcept :
+        IoOper{size},
+        m_stream{&stream}
     {
     }
     void recycle() noexcept override final
     {
         bool orphaned = !m_stream;
+        REALM_ASSERT(orphaned);
         // Note: do_recycle() commits suicide.
         do_recycle(orphaned);
     }
@@ -1803,28 +2373,28 @@ public:
     {
         m_stream = nullptr;
     }
-    SocketBase& get_socket() noexcept
+    Descriptor& descriptor() noexcept override final
     {
-        return m_stream->lowest_layer();
+        return m_stream->lowest_layer().m_desc;
     }
 protected:
     S* m_stream;
     std::error_code m_error_code;
 };
 
-template<class S> class Service::BasicStreamOps<S>::ReadOperBase: public StreamOper {
+template<class S> class Service::BasicStreamOps<S>::ReadOperBase : public StreamOper {
 public:
-    ReadOperBase(std::size_t size, S& stream, bool is_read_some, char* begin, char* end) noexcept:
-        StreamOper(size, stream),
-        m_is_read_some(is_read_some),
-        m_begin(begin),
-        m_end(end)
+    ReadOperBase(std::size_t size, S& stream, bool is_read_some, char* begin, char* end) noexcept :
+        StreamOper{size, stream},
+        m_is_read_some{is_read_some},
+        m_begin{begin},
+        m_end{end}
     {
     }
-    Want initiate() noexcept
+    Want initiate()
     {
         auto& s = *this;
-        REALM_ASSERT(this == s.m_stream->m_read_oper.get());
+        REALM_ASSERT(this == s.m_stream->lowest_layer().m_read_oper.get());
         REALM_ASSERT(!s.is_complete());
         REALM_ASSERT(s.m_curr <= s.m_end);
         Want want = Want::nothing;
@@ -1832,19 +2402,20 @@ public:
             s.set_is_complete(true); // Success
         }
         else {
+            s.m_stream->lowest_layer().m_desc.ensure_nonblocking_mode(); // Throws
             s.m_stream->do_init_read_async(s.m_error_code, want);
             if (want == Want::nothing) {
                 if (REALM_UNLIKELY(s.m_error_code)) {
                     s.set_is_complete(true); // Failure
                 }
                 else {
-                    want = proceed();
+                    want = advance();
                 }
             }
         }
         return want;
     }
-    Want proceed() noexcept override final
+    Want advance() noexcept override final
     {
         auto& s = *this;
         REALM_ASSERT(!s.is_complete());
@@ -1868,6 +2439,7 @@ public:
                 // Got nothing, but want something
                 return want;
             }
+            REALM_ASSERT(!s.m_error_code);
             // Check for completion
             REALM_ASSERT(n <= size);
             s.m_curr += n;
@@ -1877,6 +2449,7 @@ public:
             }
             if (want != Want::nothing)
                 return want;
+            REALM_ASSERT(n < size);
         }
     }
 protected:
@@ -1886,20 +2459,20 @@ protected:
     char* m_curr = m_begin; // May be dangling after cancellation
 };
 
-template<class S> class Service::BasicStreamOps<S>::WriteOperBase: public StreamOper {
+template<class S> class Service::BasicStreamOps<S>::WriteOperBase : public StreamOper {
 public:
     WriteOperBase(std::size_t size, S& stream, bool is_write_some,
-                  const char* begin, const char* end) noexcept:
-        StreamOper(size, stream),
-        m_is_write_some(is_write_some),
-        m_begin(begin),
-        m_end(end)
+                  const char* begin, const char* end) noexcept :
+        StreamOper{size, stream},
+        m_is_write_some{is_write_some},
+        m_begin{begin},
+        m_end{end}
     {
     }
-    Want initiate() noexcept
+    Want initiate()
     {
         auto& s = *this;
-        REALM_ASSERT(this == s.m_stream->m_write_oper.get());
+        REALM_ASSERT(this == s.m_stream->lowest_layer().m_write_oper.get());
         REALM_ASSERT(!s.is_complete());
         REALM_ASSERT(s.m_curr <= s.m_end);
         Want want = Want::nothing;
@@ -1907,19 +2480,20 @@ public:
             s.set_is_complete(true); // Success
         }
         else {
+            s.m_stream->lowest_layer().m_desc.ensure_nonblocking_mode(); // Throws
             s.m_stream->do_init_write_async(s.m_error_code, want);
             if (want == Want::nothing) {
                 if (REALM_UNLIKELY(s.m_error_code)) {
                     s.set_is_complete(true); // Failure
                 }
                 else {
-                    want = proceed();
+                    want = advance();
                 }
             }
         }
         return want;
     }
-    Want proceed() noexcept override final
+    Want advance() noexcept override final
     {
         auto& s = *this;
         REALM_ASSERT(!s.is_complete());
@@ -1943,6 +2517,7 @@ public:
                 // Wrote nothing, but want something written
                 return want;
             }
+            REALM_ASSERT(!s.m_error_code);
             // Check for completion
             REALM_ASSERT(n <= size);
             s.m_curr += n;
@@ -1952,6 +2527,7 @@ public:
             }
             if (want != Want::nothing)
                 return want;
+            REALM_ASSERT(n < size);
         }
     }
 protected:
@@ -1961,21 +2537,21 @@ protected:
     const char* m_curr = m_begin; // May be dangling after cancellation
 };
 
-template<class S> class Service::BasicStreamOps<S>::BufferedReadOperBase: public StreamOper {
+template<class S> class Service::BasicStreamOps<S>::BufferedReadOperBase : public StreamOper {
 public:
     BufferedReadOperBase(std::size_t size, S& stream, char* begin, char* end, int delim,
-                         ReadAheadBuffer& rab) noexcept:
-        StreamOper(size, stream),
-        m_read_ahead_buffer(rab),
-        m_begin(begin),
-        m_end(end),
-        m_delim(delim)
+                         ReadAheadBuffer& rab) noexcept :
+        StreamOper{size, stream},
+        m_read_ahead_buffer{rab},
+        m_begin{begin},
+        m_end{end},
+        m_delim{delim}
     {
     }
-    Want initiate() noexcept
+    Want initiate()
     {
         auto& s = *this;
-        REALM_ASSERT(this == s.m_stream->m_read_oper.get());
+        REALM_ASSERT(this == s.m_stream->lowest_layer().m_read_oper.get());
         REALM_ASSERT(!s.is_complete());
         Want want = Want::nothing;
         bool complete = s.m_read_ahead_buffer.read(s.m_curr, s.m_end, s.m_delim, s.m_error_code);
@@ -1983,19 +2559,20 @@ public:
             s.set_is_complete(true); // Success or failure
         }
         else {
+            s.m_stream->lowest_layer().m_desc.ensure_nonblocking_mode(); // Throws
             s.m_stream->do_init_read_async(s.m_error_code, want);
             if (want == Want::nothing) {
                 if (REALM_UNLIKELY(s.m_error_code)) {
                     s.set_is_complete(true); // Failure
                 }
                 else {
-                    want = proceed();
+                    want = advance();
                 }
             }
         }
         return want;
     }
-    Want proceed() noexcept override final
+    Want advance() noexcept override final
     {
         auto& s = *this;
         REALM_ASSERT(!s.is_complete());
@@ -2038,9 +2615,9 @@ protected:
 };
 
 template<class S> template<class H>
-class Service::BasicStreamOps<S>::ReadOper: public ReadOperBase {
+class Service::BasicStreamOps<S>::ReadOper : public ReadOperBase {
 public:
-    ReadOper(std::size_t size, S& stream, bool is_read_some, char* begin, char* end, H handler):
+    ReadOper(std::size_t size, S& stream, bool is_read_some, char* begin, char* end, H handler) :
         ReadOperBase{size, stream, is_read_some, begin, end},
         m_handler{std::move(handler)}
     {
@@ -2066,10 +2643,10 @@ private:
 };
 
 template<class S> template<class H>
-class Service::BasicStreamOps<S>::WriteOper: public WriteOperBase {
+class Service::BasicStreamOps<S>::WriteOper : public WriteOperBase {
 public:
     WriteOper(std::size_t size, S& stream, bool is_write_some,
-              const char* begin, const char* end, H handler):
+              const char* begin, const char* end, H handler) :
         WriteOperBase{size, stream, is_write_some, begin, end},
         m_handler{std::move(handler)}
     {
@@ -2095,10 +2672,10 @@ private:
 };
 
 template<class S> template<class H>
-class Service::BasicStreamOps<S>::BufferedReadOper: public BufferedReadOperBase {
+class Service::BasicStreamOps<S>::BufferedReadOper : public BufferedReadOperBase {
 public:
     BufferedReadOper(std::size_t size, S& stream, char* begin, char* end, int delim,
-                     ReadAheadBuffer& rab, H handler):
+                     ReadAheadBuffer& rab, H handler) :
         BufferedReadOperBase{size, stream, begin, end, delim, rab},
         m_handler{std::move(handler)}
     {
@@ -2183,32 +2760,6 @@ Service::alloc(OwnersOperPtr& owners_ptr, Args&&... args)
     return lenders_ptr;
 }
 
-template<class Oper>
-inline void Service::execute(std::unique_ptr<Oper, LendersOperDeleter>& lenders_ptr)
-{
-    lenders_ptr.release()->recycle_and_execute(); // Throws
-}
-
-template<class Oper, class... Args>
-inline void Service::initiate_io_oper(std::unique_ptr<Oper, LendersOperDeleter> op, Args&&... args)
-{
-    SocketBase& sock = op->get_socket();
-    Service& service = sock.get_service();
-    Want want = op->initiate(std::forward<Args>(args)...);
-    switch (want) {
-        case Want::nothing:
-            service.add_completed_oper(std::move(op));
-            return;
-        case Want::read:
-            service.add_io_oper(sock.get_sock_fd(), std::move(op), io_op_Read); // Throws
-            return;
-        case Want::write:
-            service.add_io_oper(sock.get_sock_fd(), std::move(op), io_op_Write); // Throws
-            return;
-    }
-    REALM_ASSERT(false);
-}
-
 template<class H> inline Service::PostOperBase*
 Service::post_oper_constr(void* addr, std::size_t size, Impl& service, void* cookie)
 {
@@ -2226,11 +2777,6 @@ inline bool Service::AsyncOper::is_complete() const noexcept
     return m_complete;
 }
 
-inline bool Service::AsyncOper::is_uncanceled() const noexcept
-{
-    return m_in_use && !m_canceled;
-}
-
 inline void Service::AsyncOper::cancel() noexcept
 {
     REALM_ASSERT(m_in_use);
@@ -2238,9 +2784,9 @@ inline void Service::AsyncOper::cancel() noexcept
     m_canceled = true;
 }
 
-inline Service::AsyncOper::AsyncOper(std::size_t size, bool is_in_use) noexcept:
-    m_size(size),
-    m_in_use(is_in_use)
+inline Service::AsyncOper::AsyncOper(std::size_t size, bool is_in_use) noexcept :
+    m_size{size},
+    m_in_use{is_in_use}
 {
 }
 
@@ -2264,25 +2810,36 @@ inline void Service::AsyncOper::do_recycle_and_execute(bool orphaned, H& handler
     // during the execution of the handler.
     bool was_recycled = false;
     try {
-        H handler_2 = std::move(handler); // Throws
-        // The caller (various subclasses of `AsyncOper`) must not pass any
-        // arguments to the completion handler by reference if they refer to
-        // this operation object, or parts of it. Due to the recycling of the
-        // operation object (`do_recycle()`), such references would become
-        // dangling before the invocation of the completion handler. Due to
-        // `std::decay`, the following tuple will introduce a copy of all
-        // nonconst lvalue reference arguments, preventing such references from
-        // being passed through.
-        std::tuple<typename std::decay<Args>::type...> copy_of_args(args...); // Throws
-        do_recycle(orphaned);
-        was_recycled = true;
-        util::call_with_tuple(std::move(handler_2), std::move(copy_of_args)); // Throws
+        // We need to copy or move all arguments to be passed to the handler,
+        // such that there is no risk of references to the recycled operation
+        // object being passed to the handler (the passed arguments may be
+        // references to members of the recycled operation object). The easiest
+        // way to achive this, is by forwarding the reference arguments (passed
+        // to this function) to a helper function whose arguments have
+        // nonreference type (`Args...` rather than `Args&&...`).
+        //
+        // Note that the copying and moving of arguments may throw, and it is
+        // important that the operation is still recycled even if that
+        // happens. For that reason, copying and moving of arguments must not
+        // happen until we are in a scope (this scope) that catches and deals
+        // correctly with such exceptions.
+        do_recycle_and_execute_helper(orphaned, was_recycled, std::move(handler),
+                                      std::forward<Args>(args)...); // Throws
     }
     catch (...) {
         if (!was_recycled)
             do_recycle(orphaned);
         throw;
     }
+}
+
+template<class H, class... Args>
+inline void Service::AsyncOper::do_recycle_and_execute_helper(bool orphaned, bool& was_recycled,
+                                                              H handler, Args... args)
+{
+    do_recycle(orphaned);
+    was_recycled = true;
+    handler(std::move(args)...); // Throws
 }
 
 inline void Service::AsyncOper::do_recycle(bool orphaned) noexcept
@@ -2301,38 +2858,71 @@ inline void Service::AsyncOper::do_recycle(bool orphaned) noexcept
 
 // ---------------- Resolver ----------------
 
-inline Resolver::Resolver(Service& service):
-    m_service{service}
+template<class H> class Resolver::ResolveOper : public Service::ResolveOperBase {
+public:
+    ResolveOper(std::size_t size, Resolver& r, Query q, H handler) :
+        ResolveOperBase{size, r, std::move(q)},
+        m_handler{std::move(handler)}
+    {
+    }
+    void recycle_and_execute() override final
+    {
+        REALM_ASSERT(is_complete() || (is_canceled() && !m_error_code));
+        REALM_ASSERT(is_canceled() || m_error_code || !m_endpoints.empty());
+        bool orphaned = !m_resolver;
+        std::error_code ec = m_error_code;
+        if (is_canceled())
+            ec = error::operation_aborted;
+        // Note: do_recycle_and_execute() commits suicide.
+        do_recycle_and_execute<H>(orphaned, m_handler, ec, std::move(m_endpoints)); // Throws
+    }
+private:
+    H m_handler;
+};
+
+inline Resolver::Resolver(Service& service) :
+    m_service_impl{*service.m_impl}
 {
 }
 
-inline Service& Resolver::get_service() noexcept
+inline Resolver::~Resolver() noexcept
 {
-    return m_service;
+    cancel();
 }
 
-inline void Resolver::resolve(const Query& q, Endpoint::List& l)
+inline Endpoint::List Resolver::resolve(const Query& q)
 {
     std::error_code ec;
-    if (resolve(q, l, ec))
+    Endpoint::List list = resolve(q, ec);
+    if (REALM_UNLIKELY(ec))
         throw std::system_error(ec);
+    return list;
 }
 
-inline Resolver::Query::Query(std::string service_port, int init_flags):
+template<class H> void Resolver::async_resolve(Query query, H handler)
+{
+    Service::LendersResolveOperPtr op =
+        Service::alloc<ResolveOper<H>>(m_resolve_oper, *this,
+                                       std::move(query),
+                                       std::move(handler)); // Throws
+    initiate_oper(std::move(op)); // Throws
+}
+
+inline Resolver::Query::Query(std::string service_port, int init_flags) :
     m_flags{init_flags},
     m_service{service_port}
 {
 }
 
 inline Resolver::Query::Query(const StreamProtocol& prot, std::string service_port,
-                              int init_flags):
+                              int init_flags) :
     m_flags{init_flags},
     m_protocol{prot},
     m_service{service_port}
 {
 }
 
-inline Resolver::Query::Query(std::string host_name, std::string service_port, int init_flags):
+inline Resolver::Query::Query(std::string host_name, std::string service_port, int init_flags) :
     m_flags{init_flags},
     m_host{host_name},
     m_service{service_port}
@@ -2340,7 +2930,7 @@ inline Resolver::Query::Query(std::string host_name, std::string service_port, i
 }
 
 inline Resolver::Query::Query(const StreamProtocol& prot, std::string host_name,
-                              std::string service_port, int init_flags):
+                              std::string service_port, int init_flags) :
     m_flags{init_flags},
     m_protocol{prot},
     m_host{host_name},
@@ -2374,8 +2964,8 @@ inline std::string Resolver::Query::service() const
 
 // ---------------- SocketBase ----------------
 
-inline SocketBase::SocketBase(Service& s):
-    m_service{s}
+inline SocketBase::SocketBase(Service& service) :
+    m_desc{*service.m_impl}
 {
 }
 
@@ -2384,14 +2974,14 @@ inline SocketBase::~SocketBase() noexcept
     close();
 }
 
-inline Service& SocketBase::get_service() noexcept
-{
-    return m_service;
-}
-
 inline bool SocketBase::is_open() const noexcept
 {
-    return m_sock_fd != -1;
+    return m_desc.is_open();
+}
+
+inline auto SocketBase::native_handle() const noexcept -> native_handle_type
+{
+    return m_desc.native_handle();
 }
 
 inline void SocketBase::open(const StreamProtocol& prot)
@@ -2406,7 +2996,7 @@ inline void SocketBase::close() noexcept
     if (!is_open())
         return;
     cancel();
-    do_close();
+    m_desc.close();
 }
 
 template<class O>
@@ -2455,9 +3045,13 @@ inline Endpoint SocketBase::local_endpoint() const
     return ep;
 }
 
-inline int SocketBase::get_sock_fd() const noexcept
+inline auto SocketBase::release_native_handle() noexcept -> native_handle_type
 {
-    return m_sock_fd;
+    if (is_open()) {
+        cancel();
+        return m_desc.release();
+    }
+    return m_desc.native_handle();
 }
 
 inline const StreamProtocol& SocketBase::get_protocol() const noexcept
@@ -2465,34 +3059,8 @@ inline const StreamProtocol& SocketBase::get_protocol() const noexcept
     return m_protocol;
 }
 
-inline std::error_code SocketBase::ensure_blocking_mode(std::error_code& ec) noexcept
-{
-    // Assuming that sockets are either used mostly in blocking mode, or mostly
-    // in nonblocking mode.
-    if (REALM_UNLIKELY(!m_in_blocking_mode)) {
-        bool enable = false;
-        if (set_nonblocking_mode(enable, ec))
-            return ec;
-        m_in_blocking_mode = true;
-    }
-    return std::error_code(); // Success
-}
-
-inline std::error_code SocketBase::ensure_nonblocking_mode(std::error_code& ec) noexcept
-{
-    // Assuming that sockets are either used mostly in blocking mode, or mostly
-    // in nonblocking mode.
-    if (REALM_UNLIKELY(m_in_blocking_mode)) {
-        bool enable = true;
-        if (set_nonblocking_mode(enable, ec))
-            return ec;
-        m_in_blocking_mode = false;
-    }
-    return std::error_code(); // Success
-}
-
 template<class T, int opt, class U>
-inline SocketBase::Option<T, opt, U>::Option(T init_value):
+inline SocketBase::Option<T, opt, U>::Option(T init_value) :
     m_value{init_value}
 {
 }
@@ -2527,23 +3095,23 @@ inline void SocketBase::Option<T, opt, U>::set(SocketBase& sock, std::error_code
 
 // ---------------- Socket ----------------
 
-class Socket::ConnectOperBase: public Service::IoOper {
+class Socket::ConnectOperBase : public Service::IoOper {
 public:
-    ConnectOperBase(std::size_t size, Socket& sock) noexcept:
-        IoOper(size),
-        m_socket(&sock)
+    ConnectOperBase(std::size_t size, Socket& sock) noexcept :
+        IoOper{size},
+        m_socket{&sock}
     {
     }
-    Want initiate(const Endpoint& ep) noexcept
+    Want initiate(const Endpoint& ep)
     {
         REALM_ASSERT(this == m_socket->m_write_oper.get());
-        if (m_socket->initiate_async_connect(ep, m_error_code)) {
+        if (m_socket->initiate_async_connect(ep, m_error_code)) { // Throws
             set_is_complete(true); // Failure, or immediate completion
             return Want::nothing;
         }
         return Want::write;
     }
-    Want proceed() noexcept override final
+    Want advance() noexcept override final
     {
         REALM_ASSERT(!is_complete());
         REALM_ASSERT(!is_canceled());
@@ -2555,6 +3123,7 @@ public:
     void recycle() noexcept override final
     {
         bool orphaned = !m_socket;
+        REALM_ASSERT(orphaned);
         // Note: do_recycle() commits suicide.
         do_recycle(orphaned);
     }
@@ -2562,18 +3131,18 @@ public:
     {
         m_socket = nullptr;
     }
-    SocketBase& get_socket() noexcept
+    Service::Descriptor& descriptor() noexcept override final
     {
-        return *m_socket;
+        return m_socket->m_desc;
     }
 protected:
     Socket* m_socket;
     std::error_code m_error_code;
 };
 
-template<class H> class Socket::ConnectOper: public ConnectOperBase {
+template<class H> class Socket::ConnectOper : public ConnectOperBase {
 public:
-    ConnectOper(std::size_t size, Socket& sock, H handler):
+    ConnectOper(std::size_t size, Socket& sock, H handler) :
         ConnectOperBase{size, sock},
         m_handler{std::move(handler)}
     {
@@ -2592,13 +3161,13 @@ private:
     H m_handler;
 };
 
-inline Socket::Socket(Service& service):
+inline Socket::Socket(Service& service) :
     SocketBase{service}
 {
 }
 
 inline Socket::Socket(Service& service, const StreamProtocol& prot,
-                      native_handle_type native_socket):
+                      native_handle_type native_socket) :
     SocketBase{service}
 {
     assign(prot, native_socket); // Throws
@@ -2611,105 +3180,104 @@ inline Socket::~Socket() noexcept
 inline void Socket::connect(const Endpoint& ep)
 {
     std::error_code ec;
-    if (connect(ep, ec))
+    if (connect(ep, ec)) // Throws
         throw std::system_error(ec);
 }
 
 inline std::size_t Socket::read(char* buffer, std::size_t size)
 {
     std::error_code ec;
-    read(buffer, size, ec);
+    read(buffer, size, ec); // Throws
     if (ec)
         throw std::system_error(ec);
     return size;
 }
 
-inline std::size_t Socket::read(char* buffer, std::size_t size, std::error_code& ec) noexcept
+inline std::size_t Socket::read(char* buffer, std::size_t size, std::error_code& ec)
 {
-    return StreamOps::read(*this, buffer, size, ec);
+    return StreamOps::read(*this, buffer, size, ec); // Throws
 }
 
 inline std::size_t Socket::read(char* buffer, std::size_t size, ReadAheadBuffer& rab)
 {
     std::error_code ec;
-    read(buffer, size, rab, ec);
+    read(buffer, size, rab, ec); // Throws
     if (ec)
         throw std::system_error(ec);
     return size;
 }
 
 inline std::size_t Socket::read(char* buffer, std::size_t size, ReadAheadBuffer& rab,
-                                std::error_code& ec) noexcept
+                                std::error_code& ec)
 {
     int delim = std::char_traits<char>::eof();
-    return StreamOps::buffered_read(*this, buffer, size, delim, rab, ec);
+    return StreamOps::buffered_read(*this, buffer, size, delim, rab, ec); // Throws
 }
 
 inline std::size_t Socket::read_until(char* buffer, std::size_t size, char delim,
                                       ReadAheadBuffer& rab)
 {
     std::error_code ec;
-    std::size_t n = read_until(buffer, size, delim, rab, ec);
+    std::size_t n = read_until(buffer, size, delim, rab, ec); // Throws
     if (ec)
         throw std::system_error(ec);
     return n;
 }
 
 inline std::size_t Socket::read_until(char* buffer, std::size_t size, char delim,
-                                      ReadAheadBuffer& rab, std::error_code& ec) noexcept
+                                      ReadAheadBuffer& rab, std::error_code& ec)
 {
     int delim_2 = std::char_traits<char>::to_int_type(delim);
-    return StreamOps::buffered_read(*this, buffer, size, delim_2, rab, ec);
+    return StreamOps::buffered_read(*this, buffer, size, delim_2, rab, ec); // Throws
 }
 
 inline std::size_t Socket::write(const char* data, std::size_t size)
 {
     std::error_code ec;
-    write(data, size, ec);
+    write(data, size, ec); // Throws
     if (ec)
         throw std::system_error(ec);
     return size;
 }
 
-inline std::size_t Socket::write(const char* data, std::size_t size, std::error_code& ec) noexcept
+inline std::size_t Socket::write(const char* data, std::size_t size, std::error_code& ec)
 {
-    return StreamOps::write(*this, data, size, ec);
+    return StreamOps::write(*this, data, size, ec); // Throws
 }
 
 inline std::size_t Socket::read_some(char* buffer, std::size_t size)
 {
     std::error_code ec;
-    std::size_t n = read_some(buffer, size, ec);
+    std::size_t n = read_some(buffer, size, ec); // Throws
     if (ec)
         throw std::system_error(ec);
     return n;
 }
 
-inline std::size_t Socket::read_some(char* buffer, std::size_t size, std::error_code& ec) noexcept
+inline std::size_t Socket::read_some(char* buffer, std::size_t size, std::error_code& ec)
 {
-    return StreamOps::read_some(*this, buffer, size, ec);
+    return StreamOps::read_some(*this, buffer, size, ec); // Throws
 }
 
 inline std::size_t Socket::write_some(const char* data, std::size_t size)
 {
     std::error_code ec;
-    std::size_t n = write_some(data, size, ec);
+    std::size_t n = write_some(data, size, ec); // Throws
     if (ec)
         throw std::system_error(ec);
     return n;
 }
 
-inline std::size_t Socket::write_some(const char* data, std::size_t size,
-                                      std::error_code& ec) noexcept
+inline std::size_t Socket::write_some(const char* data, std::size_t size, std::error_code& ec)
 {
-    return StreamOps::write_some(*this, data, size, ec);
+    return StreamOps::write_some(*this, data, size, ec); // Throws
 }
 
 template<class H> inline void Socket::async_connect(const Endpoint& ep, H handler)
 {
     LendersConnectOperPtr op =
         Service::alloc<ConnectOper<H>>(m_write_oper, *this, std::move(handler)); // Throws
-    Service::initiate_io_oper(std::move(op), ep); // Throws
+    m_desc.initiate_oper(std::move(op), ep); // Throws
 }
 
 template<class H> inline void Socket::async_read(char* buffer, std::size_t size, H handler)
@@ -2755,7 +3323,7 @@ inline void Socket::async_write_some(const char* data, std::size_t size, H handl
 inline void Socket::shutdown(shutdown_type what)
 {
     std::error_code ec;
-    if (shutdown(what, ec))
+    if (shutdown(what, ec)) // Throws
         throw std::system_error(ec);
 }
 
@@ -2777,40 +3345,35 @@ inline Socket& Socket::lowest_layer() noexcept
     return *this;
 }
 
-inline void Socket::do_init_read_sync(std::error_code& ec) noexcept
+inline void Socket::do_init_read_async(std::error_code&, Want& want) noexcept
 {
-    ensure_blocking_mode(ec);
-}
-
-inline void Socket::do_init_write_sync(std::error_code& ec) noexcept
-{
-    ensure_blocking_mode(ec);
-}
-
-inline void Socket::do_init_read_async(std::error_code& ec, Want& want) noexcept
-{
-    if (REALM_UNLIKELY(ensure_nonblocking_mode(ec))) {
-        want = Want::nothing; // Failure
-        return;
-    }
     want = Want::read; // Wait for read readiness before proceeding
 }
 
-inline void Socket::do_init_write_async(std::error_code& ec, Want& want) noexcept
+inline void Socket::do_init_write_async(std::error_code&, Want& want) noexcept
 {
-    if (REALM_UNLIKELY(ensure_nonblocking_mode(ec))) {
-        want = Want::nothing; // Failure
-        return;
-    }
     want = Want::write; // Wait for write readiness before proceeding
+}
+
+inline std::size_t Socket::do_read_some_sync(char* buffer, std::size_t size,
+                                             std::error_code& ec) noexcept
+{
+    return m_desc.read_some(buffer, size, ec);
+}
+
+inline std::size_t Socket::do_write_some_sync(const char* data, std::size_t size,
+                                              std::error_code& ec) noexcept
+{
+    return m_desc.write_some(data, size, ec);
 }
 
 inline std::size_t Socket::do_read_some_async(char* buffer, std::size_t size,
                                               std::error_code& ec, Want& want) noexcept
 {
     std::error_code ec_2;
-    std::size_t n = do_read_some_sync(buffer, size, ec_2);
-    if (REALM_UNLIKELY(ec_2 && ec_2 != error::resource_unavailable_try_again)) {
+    std::size_t n = m_desc.read_some(buffer, size, ec_2);
+    bool success = (!ec_2 || ec_2 == error::resource_unavailable_try_again);
+    if (REALM_UNLIKELY(!success)) {
         ec = ec_2;
         want = Want::nothing; // Failure
         return 0;
@@ -2824,8 +3387,9 @@ inline std::size_t Socket::do_write_some_async(const char* data, std::size_t siz
                                                std::error_code& ec, Want& want) noexcept
 {
     std::error_code ec_2;
-    std::size_t n = do_write_some_sync(data, size, ec_2);
-    if (REALM_UNLIKELY(ec_2 && ec_2 != error::resource_unavailable_try_again)) {
+    std::size_t n = m_desc.write_some(data, size, ec_2);
+    bool success = (!ec_2 || ec_2 == error::resource_unavailable_try_again);
+    if (REALM_UNLIKELY(!success)) {
         ec = ec_2;
         want = Want::nothing; // Failure
         return 0;
@@ -2837,26 +3401,23 @@ inline std::size_t Socket::do_write_some_async(const char* data, std::size_t siz
 
 // ---------------- Acceptor ----------------
 
-class Acceptor::AcceptOperBase: public Service::IoOper {
+class Acceptor::AcceptOperBase : public Service::IoOper {
 public:
-    AcceptOperBase(std::size_t size, Acceptor& a, Socket& s, Endpoint* e):
+    AcceptOperBase(std::size_t size, Acceptor& a, Socket& s, Endpoint* e) :
         IoOper{size},
         m_acceptor{&a},
         m_socket{s},
         m_endpoint{e}
     {
     }
-    Want initiate() noexcept
+    Want initiate()
     {
         REALM_ASSERT(this == m_acceptor->m_read_oper.get());
         REALM_ASSERT(!is_complete());
-        if (m_acceptor->ensure_nonblocking_mode(m_error_code)) {
-            set_is_complete(true); // Failure
-            return Want::nothing;
-        }
+        m_acceptor->m_desc.ensure_nonblocking_mode(); // Throws
         return Want::read;
     }
-    Want proceed() noexcept override final
+    Want advance() noexcept override final
     {
         REALM_ASSERT(!is_complete());
         REALM_ASSERT(!is_canceled());
@@ -2870,16 +3431,17 @@ public:
     void recycle() noexcept override final
     {
         bool orphaned = !m_acceptor;
+        REALM_ASSERT(orphaned);
         // Note: do_recycle() commits suicide.
         do_recycle(orphaned);
     }
     void orphan() noexcept override final
     {
-        m_acceptor = 0;
+        m_acceptor = nullptr;
     }
-    SocketBase& get_socket() noexcept
+    Service::Descriptor& descriptor() noexcept override final
     {
-        return *m_acceptor;
+        return m_acceptor->m_desc;
     }
 protected:
     Acceptor* m_acceptor;
@@ -2888,9 +3450,9 @@ protected:
     std::error_code m_error_code;
 };
 
-template<class H> class Acceptor::AcceptOper: public AcceptOperBase {
+template<class H> class Acceptor::AcceptOper : public AcceptOperBase {
 public:
-    AcceptOper(std::size_t size, Acceptor& a, Socket& s, Endpoint* e, H handler):
+    AcceptOper(std::size_t size, Acceptor& a, Socket& s, Endpoint* e, H handler) :
         AcceptOperBase{size, a, s, e},
         m_handler{std::move(handler)}
     {
@@ -2910,7 +3472,7 @@ private:
     H m_handler;
 };
 
-inline Acceptor::Acceptor(Service& service):
+inline Acceptor::Acceptor(Service& service) :
     SocketBase{service}
 {
 }
@@ -2922,7 +3484,7 @@ inline Acceptor::~Acceptor() noexcept
 inline void Acceptor::listen(int backlog)
 {
     std::error_code ec;
-    if (listen(backlog, ec))
+    if (listen(backlog, ec)) // Throws
         throw std::system_error(ec);
 }
 
@@ -2962,14 +3524,13 @@ template<class H> inline void Acceptor::async_accept(Socket& sock, Endpoint& ep,
     async_accept(sock, &ep, std::move(handler)); // Throws
 }
 
-inline std::error_code Acceptor::accept(Socket& sock, Endpoint* ep, std::error_code& ec)
+inline std::error_code Acceptor::accept(Socket& socket, Endpoint* ep, std::error_code& ec)
 {
     REALM_ASSERT(!m_read_oper || !m_read_oper->in_use());
-    if (REALM_UNLIKELY(sock.is_open()))
+    if (REALM_UNLIKELY(socket.is_open()))
         throw std::runtime_error("Socket is already open");
-    if (ensure_blocking_mode(ec))
-        return ec;
-    do_accept_sync(sock, ep, ec);
+    m_desc.ensure_blocking_mode(); // Throws
+    m_desc.accept(socket.m_desc, m_protocol, ep, ec);
     return ec;
 }
 
@@ -2977,7 +3538,7 @@ inline Acceptor::Want Acceptor::do_accept_async(Socket& socket, Endpoint* ep,
                                                 std::error_code& ec) noexcept
 {
     std::error_code ec_2;
-    do_accept_sync(socket, ep, ec_2);
+    m_desc.accept(socket.m_desc, m_protocol, ep, ec_2);
     if (ec_2 == error::resource_unavailable_try_again)
         return Want::read;
     ec = ec_2;
@@ -2990,15 +3551,16 @@ template<class H> inline void Acceptor::async_accept(Socket& sock, Endpoint* ep,
         throw std::runtime_error("Socket is already open");
     LendersAcceptOperPtr op = Service::alloc<AcceptOper<H>>(m_read_oper, *this, sock, ep,
                                                             std::move(handler)); // Throws
-    Service::initiate_io_oper(std::move(op)); // Throws
+    m_desc.initiate_oper(std::move(op)); // Throws
 }
 
 // ---------------- DeadlineTimer ----------------
 
 template<class H>
-class DeadlineTimer::WaitOper: public Service::WaitOperBase {
+class DeadlineTimer::WaitOper : public Service::WaitOperBase {
 public:
-    WaitOper(std::size_t size, DeadlineTimer& timer, clock::time_point expiration_time, H handler):
+    WaitOper(std::size_t size, DeadlineTimer& timer, clock::time_point expiration_time,
+             H handler) :
         Service::WaitOperBase{size, timer, expiration_time},
         m_handler{std::move(handler)}
     {
@@ -3016,8 +3578,8 @@ private:
     H m_handler;
 };
 
-inline DeadlineTimer::DeadlineTimer(Service& service):
-    m_service{service}
+inline DeadlineTimer::DeadlineTimer(Service& service) :
+    m_service_impl{*service.m_impl}
 {
 }
 
@@ -3026,15 +3588,14 @@ inline DeadlineTimer::~DeadlineTimer() noexcept
     cancel();
 }
 
-inline Service& DeadlineTimer::get_service() noexcept
-{
-    return m_service;
-}
-
 template<class R, class P, class H>
 inline void DeadlineTimer::async_wait(std::chrono::duration<R,P> delay, H handler)
 {
     clock::time_point now = clock::now();
+    // FIXME: This method of detecting overflow does not work. Comparison
+    // between distinct duration types is not overflow safe. Overflow easily
+    // happens in the implied conversion of arguments to the common duration
+    // type (std::common_type<>).
     auto max_add = clock::time_point::max() - now;
     if (delay > max_add)
         throw std::runtime_error("Expiration time overflow");
@@ -3042,12 +3603,53 @@ inline void DeadlineTimer::async_wait(std::chrono::duration<R,P> delay, H handle
     Service::LendersWaitOperPtr op =
         Service::alloc<WaitOper<H>>(m_wait_oper, *this, expiration_time,
                                     std::move(handler)); // Throws
-    m_service.add_wait_oper(std::move(op)); // Throws
+    initiate_oper(std::move(op)); // Throws
+}
+
+// ---------------- Trigger ----------------
+
+template<class H>
+class Trigger::ExecOper : public Service::TriggerExecOperBase {
+public:
+    ExecOper(Service::Impl& service_impl, H handler) :
+        Service::TriggerExecOperBase{service_impl},
+        m_handler{std::move(handler)}
+    {
+    }
+    void recycle_and_execute() override final
+    {
+        REALM_ASSERT(in_use());
+        // Note: Potential suicide when `self` goes out of scope
+        util::bind_ptr<TriggerExecOperBase> self{this, bind_ptr_base::adopt_tag{}};
+        if (m_service) {
+            Service::reset_trigger_exec(*m_service, *this);
+            m_handler(); // Throws
+        }
+    }
+private:
+    H m_handler;
+};
+
+template<class H> inline Trigger::Trigger(Service& service, H handler) :
+    m_exec_oper{new ExecOper<H>{*service.m_impl, std::move(handler)}} // Throws
+{
+}
+
+inline Trigger::~Trigger() noexcept
+{
+    if (m_exec_oper)
+        m_exec_oper->orphan();
+}
+
+inline void Trigger::trigger() noexcept
+{
+    REALM_ASSERT(m_exec_oper);
+    m_exec_oper->trigger();
 }
 
 // ---------------- ReadAheadBuffer ----------------
 
-inline ReadAheadBuffer::ReadAheadBuffer():
+inline ReadAheadBuffer::ReadAheadBuffer() :
     m_buffer{new char[s_size]} // Throws
 {
 }
